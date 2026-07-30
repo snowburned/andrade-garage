@@ -267,7 +267,7 @@ function renderBauPage() {
       const bg = `radial-gradient(circle at 30% 20%, ${hexToRgba(visual.color, 0.3)}, transparent 65%), linear-gradient(160deg, #26282c 0%, #1a1b1e 100%)`;
       const visualContent = item.imagem
         ? `<img src="${item.imagem}" alt="${item.nome}" class="bau-item-photo" onerror="this.style.display='none';" />`
-        : `<i data-lucide="${visual.icon}" class="bau-item-icon w-9 h-9"></i>`;
+        : `<i data-lucide="${visual.icon}" class="bau-item-icon"></i>`;
       return `
       <div class="bau-item-card" title="Última atualização: ${fmtDate(item.ultimaAtualizacao)}">
         <div class="bau-item-actions">

@@ -459,14 +459,16 @@ footer { position: relative; z-index: 1; }
 .bau-item-icon {
   position: relative;
   z-index: 1;
+  width: 30px;
+  height: 30px;
   color: var(--mat-color, #9d5cff);
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
 }
 .bau-item-photo {
   position: relative;
   z-index: 1;
-  width: 68%;
-  height: 68%;
+  width: 62%;
+  height: 62%;
   object-fit: contain;
   filter: drop-shadow(0 6px 12px rgba(0,0,0,0.55));
   transition: transform 0.2s ease;
@@ -474,22 +476,22 @@ footer { position: relative; z-index: 1; }
 .bau-item-card:hover .bau-item-photo { transform: scale(1.05); }
 .bau-item-qty {
   position: absolute;
-  left: 8px;
-  bottom: 8px;
+  left: 7px;
+  bottom: 7px;
   z-index: 2;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 800;
   color: #fff;
   background: rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.12);
-  padding: 0.15rem 0.55rem;
+  padding: 0.12rem 0.48rem;
   border-radius: 999px;
   letter-spacing: 0.02em;
 }
 .bau-item-actions {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 5px;
+  right: 5px;
   z-index: 3;
   display: flex;
   gap: 4px;
@@ -503,28 +505,28 @@ footer { position: relative; z-index: 1; }
   transform: translateY(0);
 }
 .bau-item-actions .icon-btn {
-  width: 26px;
-  height: 26px;
+  width: 23px;
+  height: 23px;
   background: rgba(0,0,0,0.55);
   border: 1px solid rgba(255,255,255,0.1);
 }
 .bau-item-body {
-  padding: 0.65rem 0.75rem 0.75rem;
+  padding: 0.55rem 0.6rem 0.6rem;
   border-top: 1px solid #2b2d31;
 }
 .bau-item-name {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #f4f4f5;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.32rem;
 }
 .bau-item-catbadge {
-  font-size: 0.62rem;
-  padding: 0.15rem 0.5rem;
+  font-size: 0.6rem;
+  padding: 0.13rem 0.45rem;
 }
 
 .category-badge {
