@@ -9,24 +9,104 @@
 // ---------------------------------------------------------------------------
 const BAU_ITEMS = [
   // Minérios
-  { id: "cobre",          nome: "Cobre",           categoria: "Minérios",        quantidade: 45,  ultimaAtualizacao: "2026-07-27" },
-  { id: "ferro",           nome: "Ferro",           categoria: "Minérios",        quantidade: 120, ultimaAtualizacao: "2026-07-28" },
-  { id: "aco",             nome: "Aço",             categoria: "Minérios",        quantidade: 80,  ultimaAtualizacao: "2026-07-28" },
-  { id: "prata",           nome: "Prata",           categoria: "Minérios",        quantidade: 12,  ultimaAtualizacao: "2026-07-25" },
-  { id: "titanio",         nome: "Titânio",         categoria: "Minérios",        quantidade: 8,   ultimaAtualizacao: "2026-07-24" },
+  { id: "cobre",          nome: "Cobre",           categoria: "Minérios",        quantidade: 45,  estoqueMinimo: 20, ultimaAtualizacao: "2026-07-27" },
+  { id: "ferro",           nome: "Ferro",           categoria: "Minérios",        quantidade: 120, estoqueMinimo: 40, ultimaAtualizacao: "2026-07-28" },
+  { id: "aco",             nome: "Aço",             categoria: "Minérios",        quantidade: 80,  estoqueMinimo: 30, ultimaAtualizacao: "2026-07-28" },
+  { id: "prata",           nome: "Prata",           categoria: "Minérios",        quantidade: 12,  estoqueMinimo: 15, ultimaAtualizacao: "2026-07-25" },
+  { id: "titanio",         nome: "Titânio",         categoria: "Minérios",        quantidade: 8,   estoqueMinimo: 15, ultimaAtualizacao: "2026-07-24" },
 
   // Barras
-  { id: "barra-cobre",     nome: "Barra de Cobre",  categoria: "Barras",          quantidade: 30,  ultimaAtualizacao: "2026-07-27", imagem: "assets/bau/barra-de-cobre.png" },
-  { id: "barra-ferro",     nome: "Barra de Ferro",  categoria: "Barras",          quantidade: 60,  ultimaAtualizacao: "2026-07-28" },
-  { id: "barra-aco",       nome: "Barra de Aço",    categoria: "Barras",          quantidade: 40,  ultimaAtualizacao: "2026-07-29" },
-  { id: "barra-prata",     nome: "Barra de Prata",  categoria: "Barras",          quantidade: 5,   ultimaAtualizacao: "2026-07-22", imagem: "assets/bau/barra-de-prata.png" },
-  { id: "barra-titanio",   nome: "Barra de Titânio",categoria: "Barras",          quantidade: 3,   ultimaAtualizacao: "2026-07-20" },
+  { id: "barra-cobre",     nome: "Barra de Cobre",  categoria: "Barras",          quantidade: 30,  estoqueMinimo: 15, ultimaAtualizacao: "2026-07-27", imagem: "assets/bau/barra-de-cobre.png" },
+  { id: "barra-ferro",     nome: "Barra de Ferro",  categoria: "Barras",          quantidade: 60,  estoqueMinimo: 20, ultimaAtualizacao: "2026-07-28" },
+  { id: "barra-aco",       nome: "Barra de Aço",    categoria: "Barras",          quantidade: 40,  estoqueMinimo: 15, ultimaAtualizacao: "2026-07-29" },
+  { id: "barra-prata",     nome: "Barra de Prata",  categoria: "Barras",          quantidade: 5,   estoqueMinimo: 8,  ultimaAtualizacao: "2026-07-22", imagem: "assets/bau/barra-de-prata.png" },
+  { id: "barra-titanio",   nome: "Barra de Titânio",categoria: "Barras",          quantidade: 3,   estoqueMinimo: 5,  ultimaAtualizacao: "2026-07-20" },
 
   // Barras Refinadas
-  { id: "fio-cobre",       nome: "Fio de Cobre",    categoria: "Barras Refinadas", quantidade: 25, ultimaAtualizacao: "2026-07-26" },
-  { id: "po-aluminio",     nome: "Pó de Alumínio",  categoria: "Barras Refinadas", quantidade: 15, ultimaAtualizacao: "2026-07-23" },
-  { id: "po-aco",          nome: "Pó de Aço",       categoria: "Barras Refinadas", quantidade: 20, ultimaAtualizacao: "2026-07-27" },
+  { id: "fio-cobre",       nome: "Fio de Cobre",    categoria: "Barras Refinadas", quantidade: 25, estoqueMinimo: 10, ultimaAtualizacao: "2026-07-26" },
+  { id: "po-aluminio",     nome: "Pó de Alumínio",  categoria: "Barras Refinadas", quantidade: 15, estoqueMinimo: 10, ultimaAtualizacao: "2026-07-23" },
+  { id: "po-aco",          nome: "Pó de Aço",       categoria: "Barras Refinadas", quantidade: 20, estoqueMinimo: 10, ultimaAtualizacao: "2026-07-27" },
 ];
+
+// ---------------------------------------------------------------------------
+// PRECOS — valor de mercado (em $) de cada item do Baú, Moldes CNC e Peças.
+// Usado pelo Dashboard Inteligente para calcular o valor total do estoque
+// e exibir preços no catálogo. Valores já reajustados em +10% sobre a
+// tabela de referência da oficina.
+// ---------------------------------------------------------------------------
+const PRECOS = {
+  // Minérios (valor estimado do minério bruto, antes de virar barra)
+  "Cobre": 80, "Ferro": 175, "Aço": 880, "Prata": 530, "Titânio": 1540,
+
+  // Barras (Lingotes)
+  "Barra de Cobre": 200, "Barra de Ferro": 440, "Barra de Aço": 2200,
+  "Barra de Prata": 1320, "Barra de Titânio": 3850,
+
+  // Barras Refinadas
+  "Pó de Aço": 2640, "Pó de Alumínio": 1595, "Fio de Cobre": 275, "Composto de Borracha": 165,
+
+  // Impressão 3D (Moldes 3D)
+  "Duto de Admissão": 660, "Caixa de Filtro Esportiva": 550, "Duto de Intercooler": 495,
+  "Moldura de Filtro": 440, "Carcaça ECU Ecumaster": 440, "Suporte de ECU": 385,
+  "Caixa de Fusíveis": 385, "Carcaça ECU Octtane": 385, "Base de ECU": 330, "Carcaça de Sensor": 220,
+
+  // Impressão Industrial de Pó (Moldes CNC)
+  "Bloco de Ferro Bruto": 37510, "Bloco de Alumínio Bruto": 34320, "Virabrequim Bruto": 29590,
+  "Carcaça de Turbo Race": 27500, "Carcaça de Câmbio Bruto": 26400, "Carcaça de Diferencial Bruta": 25905,
+  "Coletor de Escape Bruto": 21670, "Comando Bruto": 20075, "Cabeçote Bruto": 19580,
+  "Carcaça de Turbo Média": 19030, "Volante de Motor Bruto": 19030, "Carcaça de Turbo Pequena": 13200,
+  "Núcleo Bruto de Intercooler": 10010, "Núcleo Bruto de Radiador": 10010, "Molde de Biela Usinada": 9515,
+  "Rotor Compressor": 9020, "Corpo de Borboleta Bruto": 9020, "Flauta de Combustível Bruta": 6600,
+  "Caixa Lateral de Intercooler": 6380, "Molde de Pistão Usinado": 5830,
+
+  // ECU / Eletrônica
+  "ECU Ecumaster": 15400, "ECU Octtane Race": 15620, "ECU FT700": 12100, "ECU FT700 Plus": 12100,
+  "ECU Race Dash": 12100, "ECU FT550": 6600,
+
+  // Turbo / Sobrealimentação
+  "Twin Turbo Race": 113850, "Biturbo Race": 95755, "Twin Turbo Drag": 94820, "Biturbo Street": 70895,
+  "Twin Turbo Street": 55990, "Turbo Prototype": 49335, "Turbo Race Mid": 45045, "Turbo Race Top": 45045,
+  "Turbo Street Mid": 34430, "Turbo Street Low": 26950,
+
+  // Motor Interno
+  "Bloco Billet": 72985, "Bloco de Ferro Fundido": 37950, "Bloco de Alumínio": 34815,
+  "Pistão Titânio": 68695, "Pistão Forjado": 24805, "Pistão Fundido": 23760,
+  "Biela Titânio": 43065, "Biela H-Beam": 39435, "Biela Forjada OEM": 38445,
+  "Virabrequim Prototype": 36025, "Virabrequim Race": 30745, "Virabrequim Street": 30030, "Virabrequim Track": 30030,
+  "Cabeçote CNC Billet": 28160, "Cabeçote Alumínio": 20240, "Cabeçote de Ferro": 19580,
+
+  // Transmissão
+  "Câmbio Prototype": 47905, "Câmbio Track": 36025, "Câmbio Race": 34760, "Câmbio Street": 28100,
+  "Diferencial Prototype": 64075, "Diferencial Track": 45155, "Diferencial Race": 32450, "Diferencial Street": 27500,
+  "Coroa e Pinhão Race": 24585, "Coroa e Pinhão Velocidade": 15840,
+  "Coroa e Pinhão Aceleração": 12485, "Coroa e Pinhão Balanceado": 12485,
+
+  // Admissão / Intake
+  "Coletor Admissão Prototype": 35200, "Coletor Admissão Race": 29205,
+  "Coletor Admissão Track": 23210, "Coletor Admissão Street": 13035,
+  "Corpo Borboleta Prototype": 26730, "Corpo Borboleta Race": 20405,
+  "Corpo Borboleta Track": 14025, "Corpo Borboleta Street": 9735,
+  "Filtro Ar Prototype": 13915, "Filtro Ar Race": 8030, "Filtro Ar Track": 2200, "Filtro Ar Street": 990,
+
+  // Arrefecimento
+  "Intercooler Prototype": 66880, "Intercooler Race": 50765, "Intercooler Track": 34650, "Intercooler Street": 23155,
+  "Radiador Prototype": 38665, "Radiador Race": 22550, "Radiador Track": 21670, "Radiador Street": 11055,
+  "Radiador Óleo Prototype": 25135, "Radiador Óleo Race": 13695, "Radiador Óleo Track": 6820, "Radiador Óleo Street": 4950,
+
+  // Escape
+  "Escape Prototype": 76560, "Escape Race": 66495, "Escape Track": 56430, "Escape Street": 32670,
+
+  // Combustível
+  "Bomba Combustível Prototype": 10450, "Bomba Combustível Race": 6930,
+  "Bomba Combustível Track": 4070, "Bomba Combustível Street": 1925,
+
+  // Juntas
+  "Junta Cabeçote Prototype": 4070, "Junta Cabeçote Track": 3630, "Junta Cabeçote Race": 2970, "Junta Cabeçote Street": 660,
+};
+
+function getPreco(nome) {
+  return PRECOS[nome] || 0;
+}
 
 // ---------------------------------------------------------------------------
 // CATEGORIAS DE PEÇAS — ordem de exibição na aba "Peças"
@@ -45,6 +125,13 @@ const PARTS_CATEGORIES = [
   "Montagem Eletrônica",
   "ECU",
   "Intercooler",
+  "Radiador de Óleo",
+  "Coletor de Admissão",
+  "Corpo de Borboleta",
+  "Filtro de Ar",
+  "Escape",
+  "Bomba de Combustível",
+  "Junta do Cabeçote",
   "Moldes 3D",
 ];
 
@@ -63,6 +150,13 @@ const CATEGORY_ICONS = {
   "Montagem Eletrônica": "circuit-board",
   "ECU": "cpu",
   "Intercooler": "snowflake",
+  "Radiador de Óleo": "droplet",
+  "Coletor de Admissão": "wind",
+  "Corpo de Borboleta": "circle",
+  "Filtro de Ar": "filter",
+  "Escape": "flame",
+  "Bomba de Combustível": "fuel",
+  "Junta do Cabeçote": "square",
   "Moldes 3D": "printer",
 };
 
@@ -491,6 +585,125 @@ const PARTS = [
       { nome: "Intercooler Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "intercooler-race" } },
       { nome: "Núcleo Bruto de Intercooler", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-intercooler" } },
     ] },
+
+  /* --------------------------- RADIADOR DE ÓLEO ----------------------------- */
+  { id: "radiador-oleo-street", nome: "Radiador Óleo Street", categoria: "Radiador de Óleo",
+    materiais: [
+      { nome: "Mangote de Silicone", quantidade: 2 },
+      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
+    ] },
+  { id: "radiador-oleo-track", nome: "Radiador Óleo Track", categoria: "Radiador de Óleo",
+    materiais: [
+      { nome: "Mangote de Silicone", quantidade: 3 },
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
+    ] },
+  { id: "radiador-oleo-race", nome: "Radiador Óleo Race", categoria: "Radiador de Óleo",
+    materiais: [
+      { nome: "Mangote de Silicone", quantidade: 4 },
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Tampa Pressurizada", quantidade: 1 },
+      { nome: "Núcleo Bruto de Radiador", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
+    ] },
+  { id: "radiador-oleo-prototype", nome: "Radiador Óleo Prototype", categoria: "Radiador de Óleo",
+    materiais: [
+      { nome: "Barra de Titânio", quantidade: 1 },
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Radiador Óleo Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "radiador-oleo-race" } },
+      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
+    ] },
+
+  /* --------------------------- COLETOR DE ADMISSÃO -------------------------- */
+  { id: "coletor-admissao-street", nome: "Coletor Admissão Street", categoria: "Coletor de Admissão",
+    materiais: [{ nome: "Mangote de Silicone", quantidade: 1 }, { nome: "Pó de Alumínio", quantidade: 4 }] },
+  { id: "coletor-admissao-track", nome: "Coletor Admissão Track", categoria: "Coletor de Admissão",
+    materiais: [{ nome: "Mangote de Silicone", quantidade: 2 }, { nome: "Pó de Alumínio", quantidade: 6 }] },
+  { id: "coletor-admissao-race", nome: "Coletor Admissão Race", categoria: "Coletor de Admissão",
+    materiais: [{ nome: "Mangote de Silicone", quantidade: 2 }, { nome: "Sensor de Pressão", quantidade: 1 }, { nome: "Pó de Alumínio", quantidade: 9 }] },
+  { id: "coletor-admissao-prototype", nome: "Coletor Admissão Prototype", categoria: "Coletor de Admissão",
+    materiais: [
+      { nome: "Barra de Titânio", quantidade: 1 },
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Coletor Admissão Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "coletor-admissao-race" } },
+    ] },
+
+  /* ---------------------------- CORPO DE BORBOLETA --------------------------- */
+  { id: "corpo-borboleta-street", nome: "Corpo Borboleta Street", categoria: "Corpo de Borboleta",
+    materiais: [
+      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
+    ] },
+  { id: "corpo-borboleta-track", nome: "Corpo Borboleta Track", categoria: "Corpo de Borboleta",
+    materiais: [
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
+    ] },
+  { id: "corpo-borboleta-race", nome: "Corpo Borboleta Race", categoria: "Corpo de Borboleta",
+    materiais: [
+      { nome: "Sensor de Pressão", quantidade: 1 },
+      { nome: "Tratamento Térmico", quantidade: 1 },
+      { nome: "Corpo de Borboleta Bruto", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
+    ] },
+  { id: "corpo-borboleta-prototype", nome: "Corpo Borboleta Prototype", categoria: "Corpo de Borboleta",
+    materiais: [
+      { nome: "Barra de Titânio", quantidade: 1 },
+      { nome: "Corpo Borboleta Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "corpo-borboleta-race" } },
+      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
+    ] },
+
+  /* ------------------------------- FILTRO DE AR ------------------------------ */
+  { id: "filtro-ar-street", nome: "Filtro Ar Street", categoria: "Filtro de Ar",
+    materiais: [{ nome: "Filamento Plástico", quantidade: 2 }, { nome: "Composto de Borracha", quantidade: 1 }] },
+  { id: "filtro-ar-track", nome: "Filtro Ar Track", categoria: "Filtro de Ar",
+    materiais: [{ nome: "Filamento Plástico", quantidade: 3 }, { nome: "Composto de Borracha", quantidade: 1 }] },
+  { id: "filtro-ar-race", nome: "Filtro Ar Race", categoria: "Filtro de Ar",
+    materiais: [{ nome: "Filamento Plástico", quantidade: 5 }, { nome: "Composto de Borracha", quantidade: 2 }] },
+  { id: "filtro-ar-prototype", nome: "Filtro Ar Prototype", categoria: "Filtro de Ar",
+    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Filamento Plástico", quantidade: 6 }, { nome: "Composto de Borracha", quantidade: 2 }] },
+
+  /* ---------------------------------- ESCAPE --------------------------------- */
+  { id: "escape-street", nome: "Escape Street", categoria: "Escape",
+    materiais: [
+      { nome: "Abraçadeira V-Band", quantidade: 2 },
+      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
+    ] },
+  { id: "escape-track", nome: "Escape Track", categoria: "Escape",
+    materiais: [
+      { nome: "Abraçadeira V-Band", quantidade: 3 },
+      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
+    ] },
+  { id: "escape-race", nome: "Escape Race", categoria: "Escape",
+    materiais: [
+      { nome: "Abraçadeira V-Band", quantidade: 4 },
+      { nome: "Tratamento Térmico", quantidade: 1 },
+      { nome: "Coletor de Escape Bruto", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
+    ] },
+  { id: "escape-prototype", nome: "Escape Prototype", categoria: "Escape",
+    materiais: [
+      { nome: "Barra de Titânio", quantidade: 1 },
+      { nome: "Abraçadeira V-Band", quantidade: 4 },
+      { nome: "Escape Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "escape-race" } },
+      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
+    ] },
+
+  /* ---------------------------- BOMBA DE COMBUSTÍVEL ------------------------- */
+  { id: "bomba-combustivel-street", nome: "Bomba Combustível Street", categoria: "Bomba de Combustível",
+    materiais: [{ nome: "Componente Eletrônico", quantidade: 2 }, { nome: "Mangote de Silicone", quantidade: 1 }] },
+  { id: "bomba-combustivel-track", nome: "Bomba Combustível Track", categoria: "Bomba de Combustível",
+    materiais: [{ nome: "Componente Eletrônico", quantidade: 3 }, { nome: "Mangote de Silicone", quantidade: 2 }] },
+  { id: "bomba-combustivel-race", nome: "Bomba Combustível Race", categoria: "Bomba de Combustível",
+    materiais: [{ nome: "Componente Eletrônico", quantidade: 4 }, { nome: "Fio de Cobre", quantidade: 1 }, { nome: "Mangote de Silicone", quantidade: 2 }] },
+  { id: "bomba-combustivel-prototype", nome: "Bomba Combustível Prototype", categoria: "Bomba de Combustível",
+    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Componente Eletrônico", quantidade: 5 }, { nome: "Fio de Cobre", quantidade: 1 }] },
+
+  /* ------------------------------ JUNTA DO CABEÇOTE --------------------------- */
+  { id: "junta-cabecote-street", nome: "Junta Cabeçote Street", categoria: "Junta do Cabeçote",
+    materiais: [{ nome: "Composto de Borracha", quantidade: 1 }] },
+  { id: "junta-cabecote-race", nome: "Junta Cabeçote Race", categoria: "Junta do Cabeçote",
+    materiais: [{ nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 1 }] },
+  { id: "junta-cabecote-track", nome: "Junta Cabeçote Track", categoria: "Junta do Cabeçote",
+    materiais: [{ nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 2 }] },
+  { id: "junta-cabecote-prototype", nome: "Junta Cabeçote Prototype", categoria: "Junta do Cabeçote",
+    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 2 }] },
 
   /* ----------------------------- MOLDES 3D --------------------------------- */
   { id: "base-ecu", nome: "Base de ECU", categoria: "Moldes 3D",

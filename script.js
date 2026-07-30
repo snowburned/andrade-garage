@@ -172,8 +172,45 @@ function checkDirectStock(materiais) {
 
 /* ========================================================== dashboard === */
 
+function fmtMoney(valor) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
 function computePodeForjarCount() {
   return PARTS.filter((p) => checkDirectStock(p.materiais).canMake).length;
+}
+
+// Valor total do estoque do Baú (quantidade × preço de mercado de cada item)
+function computeValorTotalEstoque() {
+  return bauItems.reduce((soma, item) => soma + item.quantidade * getPreco(item.nome), 0);
+}
+
+// Minério (categoria "Minérios") com a maior quantidade em estoque
+function computeMinerioMaisAbundante() {
+  const minerios = bauItems.filter((i) => i.categoria === "Minérios");
+  if (!minerios.length) return null;
+  return minerios.reduce((max, i) => (i.quantidade > max.quantidade ? i : max), minerios[0]);
+}
+
+// Item do Baú com a menor quantidade em estoque (o mais raro/escasso)
+function computeMaterialMaisRaro() {
+  if (!bauItems.length) return null;
+  return bauItems.reduce((min, i) => (i.quantidade < min.quantidade ? i : min), bauItems[0]);
+}
+
+// Barras cujo minério de origem tem estoque suficiente para forjar mais uma unidade agora
+function computeBarrasForjaveisAgora() {
+  const barras = bauItems.filter((i) => i.categoria === "Barras");
+  return barras.filter((barra) => {
+    const nomeMinerio = barra.nome.replace(/^Barra de\s+/i, "").trim();
+    const minerio = bauItems.find((i) => i.categoria === "Minérios" && i.nome === nomeMinerio);
+    return minerio && minerio.quantidade > 0;
+  });
+}
+
+// Itens do Baú abaixo do estoque mínimo definido
+function computeEstoqueAbaixoMinimo() {
+  return bauItems.filter((i) => typeof i.estoqueMinimo === "number" && i.quantidade < i.estoqueMinimo);
 }
 
 function renderDashboard() {
@@ -184,6 +221,24 @@ function renderDashboard() {
   const latest = bauItems.reduce((acc, i) => (i.ultimaAtualizacao > acc ? i.ultimaAtualizacao : acc), "0000-00-00");
   document.getElementById("statUltimaAtualizacao").textContent = fmtDate(latest);
   document.getElementById("statTotalMateriais").textContent = bauItems.length;
+
+  // ---- Dashboard Inteligente ----
+  document.getElementById("statValorEstoque").textContent = fmtMoney(computeValorTotalEstoque());
+
+  const minerioTop = computeMinerioMaisAbundante();
+  document.getElementById("statMinerioAbundante").textContent = minerioTop ? minerioTop.nome : "—";
+  document.getElementById("statMinerioAbundanteSub").textContent = minerioTop ? `${minerioTop.quantidade} un` : "";
+
+  const materialRaro = computeMaterialMaisRaro();
+  document.getElementById("statMaterialRaro").textContent = materialRaro ? materialRaro.nome : "—";
+  document.getElementById("statMaterialRaroSub").textContent = materialRaro ? `${materialRaro.quantidade} un` : "";
+
+  const barrasForjaveis = computeBarrasForjaveisAgora();
+  const totalBarras = bauItems.filter((i) => i.categoria === "Barras").length;
+  document.getElementById("statBarrasForjaveis").textContent = `${barrasForjaveis.length} / ${totalBarras}`;
+
+  const abaixoMinimo = computeEstoqueAbaixoMinimo();
+  document.getElementById("statAbaixoMinimo").textContent = abaixoMinimo.length;
 
   // Avisos
   const iconMap = { alerta: "alert-triangle", info: "info", sucesso: "check-circle-2" };
@@ -219,15 +274,15 @@ function renderDashboard() {
       </div>`;
   }).join("");
 
-  // Estoque crítico (quantidade <= 10)
-  const low = [...bauItems].filter((i) => i.quantidade <= 10).sort((a, b) => a.quantidade - b.quantidade);
+  // Estoque abaixo do mínimo definido para cada item
+  const low = computeEstoqueAbaixoMinimo().sort((a, b) => a.quantidade - b.quantidade);
   document.getElementById("dashLowStock").innerHTML = low.length
     ? low.map((i) => `
         <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#26282c] last:border-0">
           <span class="text-gray-300">${i.nome}</span>
-          <span class="text-amber-400 font-semibold">${i.quantidade} un</span>
+          <span class="text-amber-400 font-semibold">${i.quantidade} / ${i.estoqueMinimo} un</span>
         </div>`).join("")
-    : `<p class="text-sm text-gray-500">Nenhum material em nível crítico.</p>`;
+    : `<p class="text-sm text-gray-500">Nenhum material abaixo do estoque mínimo.</p>`;
 
   refreshIcons();
 }

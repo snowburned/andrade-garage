@@ -162,6 +162,43 @@
             </div>
           </div>
 
+          <!-- Dashboard Inteligente -->
+          <div class="card-panel">
+            <h3 class="flex items-center gap-2 text-white font-semibold mb-4">
+              <i data-lucide="brain-circuit" class="w-[18px] h-[18px] text-accentlight"></i>
+              Dashboard Inteligente
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                <p class="stat-label">Valor total do estoque</p>
+                <p id="statValorEstoque" class="stat-value text-lg">R$ 0</p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="gem" class="w-5 h-5"></i></div>
+                <p class="stat-label">Minério mais abundante</p>
+                <p id="statMinerioAbundante" class="stat-value text-lg">—</p>
+                <p id="statMinerioAbundanteSub" class="text-xs text-gray-500 mt-0.5"></p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="star" class="w-5 h-5"></i></div>
+                <p class="stat-label">Material mais raro</p>
+                <p id="statMaterialRaro" class="stat-value text-lg">—</p>
+                <p id="statMaterialRaroSub" class="text-xs text-gray-500 mt-0.5"></p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="rectangle-horizontal" class="w-5 h-5"></i></div>
+                <p class="stat-label">Barras forjáveis agora</p>
+                <p id="statBarrasForjaveis" class="stat-value">0</p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                <p class="stat-label">Abaixo do estoque mínimo</p>
+                <p id="statAbaixoMinimo" class="stat-value">0</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Avisos da Garagem -->
           <div class="card-panel">
             <div class="flex items-center justify-between mb-4">
