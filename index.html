@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ANDRADE GARAGE — Painel Interno</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          base: "#0f1115",
+          sidebar: "#18191c",
+          card: "#202225",
+          cardhover: "#26282c",
+          accent: "#7c3aed",
+          accentlight: "#9d5cff",
+          border: "#2b2d31",
+        },
+        fontFamily: {
+          sans: ["Inter", "sans-serif"],
+          display: ["'Rajdhani'", "Inter", "sans-serif"],
+        },
+        boxShadow: {
+          soft: "0 8px 24px -8px rgba(0,0,0,0.5)",
+          glow: "0 0 0 1px rgba(124,58,237,0.25), 0 8px 30px -8px rgba(124,58,237,0.35)",
+        },
+      },
+    },
+  };
+</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-base text-gray-200 font-sans antialiased overflow-x-hidden">
+
+  <div class="flex min-h-screen">
+
+    <!-- ============================= SIDEBAR ============================= -->
+    <aside id="sidebar" class="sidebar fixed lg:sticky lg:top-0 z-40 h-screen w-[272px] bg-sidebar border-r border-border flex flex-col shrink-0 -translate-x-full lg:translate-x-0">
+
+      <!-- Banner -->
+      <div class="garage-banner relative w-full h-[130px] shrink-0 overflow-hidden border-b border-border">
+        <div class="banner-texture"></div>
+        <div class="banner-glow"></div>
+        <div class="banner-grid"></div>
+        <div class="relative z-10 h-full flex flex-col justify-end p-4">
+          <p class="text-[10px] tracking-[0.35em] text-accentlight/80 font-semibold uppercase mb-1">Street Car Club RP</p>
+          <h1 class="banner-title text-2xl leading-none">ANDRADE <span class="text-accentlight">GARAGE</span></h1>
+        </div>
+        <button id="collapseBtn" class="hidden lg:flex absolute top-3 right-3 z-20 w-7 h-7 items-center justify-center rounded-md bg-black/30 hover:bg-black/50 border border-white/10 text-gray-300 transition-colors" title="Recolher menu">
+          <i data-lucide="chevrons-left" class="w-4 h-4"></i>
+        </button>
+        <button id="closeMobileSidebar" class="lg:hidden absolute top-3 right-3 z-20 w-7 h-7 flex items-center justify-center rounded-md bg-black/30 hover:bg-black/50 border border-white/10 text-gray-300">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Navegação -->
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <button data-page="dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button data-page="bau" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="package" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Baú</span>
+        </button>
+        <button data-page="forjados" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="hammer" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Peças</span>
+        </button>
+        <button data-page="moldescnc" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="drafting-compass" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Moldes CNC</span>
+        </button>
+        <button data-page="configuracoes" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Configurações</span>
+        </button>
+      </nav>
+
+      <!-- Rodapé sidebar / usuário -->
+      <div class="px-3 py-3 border-t border-border shrink-0">
+        <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-accentlight flex items-center justify-center text-sm font-bold shrink-0">MA</div>
+          <div class="nav-label leading-tight overflow-hidden">
+            <p class="text-sm font-semibold text-white truncate">Mecânico Chefe</p>
+            <p class="text-xs text-gray-500 truncate">ANDRADE GARAGE</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/60 z-30 lg:hidden"></div>
+
+    <!-- ============================= CONTEÚDO ============================= -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- Topbar -->
+      <header class="sticky top-0 z-20 h-16 shrink-0 bg-base/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-8">
+        <div class="flex items-center gap-3">
+          <button id="openMobileSidebar" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-card border border-border text-gray-300">
+            <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+          </button>
+          <div>
+            <h2 id="pageTitle" class="text-lg font-bold text-white leading-none">Dashboard</h2>
+            <p id="pageSubtitle" class="text-xs text-gray-500 mt-0.5">Visão geral da oficina</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="hidden sm:flex items-center gap-2 text-xs text-gray-400 bg-card border border-border px-3 py-1.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Sistema online
+          </span>
+        </div>
+      </header>
+
+      <main id="mainContent" class="flex-1 p-4 lg:p-8 space-y-6">
+
+        <!-- ======================= PÁGINA: DASHBOARD ======================= -->
+        <section id="page-dashboard" class="page-section space-y-6">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="hammer" class="w-5 h-5"></i></div>
+              <p class="stat-label">Peças no catálogo</p>
+              <p id="statPecas" class="stat-value">0</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="boxes" class="w-5 h-5"></i></div>
+              <p class="stat-label">Itens no Baú</p>
+              <p id="statItensBau" class="stat-value">0</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+              <p class="stat-label">Podem ser forjadas</p>
+              <p id="statPodeForjar" class="stat-value">0</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="clock" class="w-5 h-5"></i></div>
+              <p class="stat-label">Última atualização</p>
+              <p id="statUltimaAtualizacao" class="stat-value text-lg">—</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i data-lucide="layers" class="w-5 h-5"></i></div>
+              <p class="stat-label">Total de materiais</p>
+              <p id="statTotalMateriais" class="stat-value">0</p>
+            </div>
+          </div>
+
+          <!-- Avisos da Garagem -->
+          <div class="card-panel">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="flex items-center gap-2 text-white font-semibold">
+                <i data-lucide="megaphone" class="w-[18px] h-[18px] text-accentlight"></i>
+                Avisos da Garagem
+              </h3>
+            </div>
+            <div id="noticesList" class="space-y-3"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card-panel">
+              <h3 class="flex items-center gap-2 text-white font-semibold mb-4">
+                <i data-lucide="pie-chart" class="w-[18px] h-[18px] text-accentlight"></i>
+                Estoque por categoria
+              </h3>
+              <div id="dashCategoryBreakdown" class="space-y-4"></div>
+            </div>
+            <div class="card-panel">
+              <h3 class="flex items-center gap-2 text-white font-semibold mb-4">
+                <i data-lucide="alert-triangle" class="w-[18px] h-[18px] text-amber-400"></i>
+                Materiais com estoque crítico
+              </h3>
+              <div id="dashLowStock" class="space-y-2"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================= PÁGINA: BAÚ ======================= -->
+        <section id="page-bau" class="page-section hidden space-y-5">
+
+          <div class="card-panel !p-4">
+            <div class="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+              <div class="search-wrap relative flex-1 max-w-md">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <input id="bauSearch" type="text" placeholder="Pesquisar item do Baú..."
+                  class="input-field pl-9 w-full" autocomplete="off" />
+                <button type="button" class="search-clear-btn" data-clear="bauSearch" title="Limpar busca">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2 items-center">
+                <div class="filter-pills" id="bauCategoryFilters">
+                  <button data-cat="Todos" class="filter-pill active">Todos</button>
+                  <button data-cat="Minérios" class="filter-pill">Minérios</button>
+                  <button data-cat="Barras" class="filter-pill">Barras</button>
+                  <button data-cat="Barras Refinadas" class="filter-pill">Barras Refinadas</button>
+                </div>
+                <select id="bauSort" class="input-field !w-auto text-sm">
+                  <option value="none">Ordenar</option>
+                  <option value="qty-desc">Quantidade ↓</option>
+                  <option value="qty-asc">Quantidade ↑</option>
+                  <option value="az">Nome A–Z</option>
+                </select>
+                <button id="addItemBtn" class="btn-primary">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span class="hidden sm:inline">Adicionar Item</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-panel !p-0 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-gray-400 text-xs uppercase tracking-wider border-b border-border">
+                    <th class="px-5 py-3 font-semibold">Nome do Item</th>
+                    <th class="px-5 py-3 font-semibold">Categoria</th>
+                    <th class="px-5 py-3 font-semibold">Quantidade</th>
+                    <th class="px-5 py-3 font-semibold">Última Atualização</th>
+                    <th class="px-5 py-3 font-semibold text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="bauTableBody"></tbody>
+              </table>
+            </div>
+            <div id="bauEmptyState" class="hidden p-10 text-center text-gray-500">
+              <i data-lucide="package-search" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+              Nenhum item encontrado.
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================= PÁGINA: PEÇAS (FORJADOS) ======================= -->
+        <section id="page-forjados" class="page-section hidden space-y-5">
+
+          <div class="card-panel !p-4">
+            <div class="search-wrap relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+              <input id="forjadosSearch" type="text" placeholder="Pesquisar peça..."
+                class="input-field pl-9 w-full" autocomplete="off" />
+              <button type="button" class="search-clear-btn" data-clear="forjadosSearch" title="Limpar busca">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="forjadosGrid" class="space-y-5"></div>
+          <div id="forjadosEmptyState" class="hidden p-10 text-center text-gray-500">
+            <i data-lucide="hammer" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            Nenhuma peça encontrada.
+          </div>
+        </section>
+
+        <!-- ======================= PÁGINA: MOLDES CNC ======================= -->
+        <section id="page-moldescnc" class="page-section hidden space-y-5">
+
+          <div class="card-panel !p-4">
+            <div class="search-wrap relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+              <input id="moldesSearch" type="text" placeholder="Pesquisar molde CNC..."
+                class="input-field pl-9 w-full" autocomplete="off" />
+              <button type="button" class="search-clear-btn" data-clear="moldesSearch" title="Limpar busca">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="moldesGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5"></div>
+          <div id="moldesEmptyState" class="hidden p-10 text-center text-gray-500">
+            <i data-lucide="drafting-compass" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            Nenhum molde encontrado.
+          </div>
+        </section>
+
+        <!-- ======================= PÁGINA: CONFIGURAÇÕES ======================= -->
+        <section id="page-configuracoes" class="page-section hidden space-y-6">
+          <div class="card-panel">
+            <h3 class="flex items-center gap-2 text-white font-semibold mb-1">
+              <i data-lucide="palette" class="w-[18px] h-[18px] text-accentlight"></i>
+              Aparência
+            </h3>
+            <p class="text-sm text-gray-500 mb-5">O sistema ANDRADE GARAGE utiliza tema escuro permanente com cor de destaque roxa, para reduzir a fadiga visual no galpão e manter a identidade visual da oficina.</p>
+            <div class="flex items-center justify-between py-3 border-t border-border">
+              <div>
+                <p class="text-sm font-medium text-white">Tema escuro + destaque roxo</p>
+                <p class="text-xs text-gray-500">Sempre ativo nesta versão do painel.</p>
+              </div>
+              <div class="toggle-switch toggle-locked on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="flex items-center justify-between py-3 border-t border-border">
+              <div>
+                <p class="text-sm font-medium text-white">Imagem de fundo</p>
+                <p class="text-xs text-gray-500">Fachada da ANDRADE GARAGE fixa atrás do painel.</p>
+              </div>
+              <div class="toggle-switch toggle-locked on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="flex items-center justify-between py-3 border-t border-border">
+              <div>
+                <p class="text-sm font-medium text-white">Animações de interface</p>
+                <p class="text-xs text-gray-500">Transições suaves entre páginas e componentes.</p>
+              </div>
+              <div id="animToggle" class="toggle-switch on"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <h3 class="flex items-center gap-2 text-white font-semibold mb-1">
+              <i data-lucide="building-2" class="w-[18px] h-[18px] text-accentlight"></i>
+              Sobre a oficina
+            </h3>
+            <p class="text-sm text-gray-500 mb-5">Informações gerais da ANDRADE GARAGE.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div class="info-row"><span>Nome da oficina</span><strong>ANDRADE GARAGE</strong></div>
+              <div class="info-row"><span>Cidade</span><strong>Street Car Club RP</strong></div>
+              <div class="info-row"><span>Itens cadastrados no Baú</span><strong id="cfgTotalItens">0</strong></div>
+              <div class="info-row"><span>Peças cadastradas</span><strong id="cfgTotalReceitas">0</strong></div>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <h3 class="flex items-center gap-2 text-white font-semibold mb-1">
+              <i data-lucide="database" class="w-[18px] h-[18px] text-accentlight"></i>
+              Dados do sistema
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">Todos os dados são carregados via <code class="text-accentlight">data.js</code>, sem uso de banco de dados. Alterações feitas em tempo de execução não são persistidas ao recarregar a página.</p>
+            <button id="resetDataBtn" class="btn-secondary">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              Restaurar dados originais
+            </button>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="px-4 lg:px-8 py-5 text-center text-xs text-gray-600 border-t border-border">
+        ANDRADE GARAGE · Street Car Club RP — Painel interno de estoque e forjas
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================= MODAL: ITEM DO BAÚ ============================= -->
+  <div id="itemModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="itemModalTitle" class="text-lg font-bold text-white">Adicionar Item</h3>
+        <button data-close-modal="itemModal" class="modal-close"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="itemForm" class="modal-body space-y-4">
+        <input type="hidden" id="itemId" />
+        <div>
+          <label class="field-label">Nome do item</label>
+          <input id="itemNome" required class="input-field w-full" placeholder="Ex: Barra de Cobre" />
+        </div>
+        <div>
+          <label class="field-label">Categoria</label>
+          <select id="itemCategoria" required class="input-field w-full">
+            <option value="Minérios">Minérios</option>
+            <option value="Barras">Barras</option>
+            <option value="Barras Refinadas">Barras Refinadas</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Quantidade</label>
+          <input id="itemQuantidade" type="number" min="0" required class="input-field w-full" placeholder="0" />
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" data-close-modal="itemModal" class="btn-secondary flex-1">Cancelar</button>
+          <button type="submit" class="btn-primary flex-1 justify-center">Salvar Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================= MODAL: DETALHES DA PEÇA / MOLDE ============================= -->
+  <div id="detailModal" class="modal-overlay hidden">
+    <div class="modal-box max-w-lg">
+      <div class="modal-header">
+        <div class="flex items-center gap-3 min-w-0">
+          <button id="detailBackBtn" class="icon-btn hidden shrink-0" title="Voltar">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div id="detailModalIconWrap" class="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center text-accentlight shrink-0 overflow-hidden"></div>
+          <div class="min-w-0">
+            <h3 id="detailModalTitle" class="text-lg font-bold text-white leading-tight truncate">Peça</h3>
+            <p id="detailModalSubtitle" class="text-xs text-gray-500 truncate"></p>
+          </div>
+        </div>
+        <button data-close-modal="detailModal" class="modal-close shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="detailBreadcrumbs" class="hidden flex items-center gap-1.5 flex-wrap px-5 pt-3 text-xs"></div>
+      <div id="detailModalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Botão voltar ao topo -->
+  <button id="scrollTopBtn" type="button" class="scroll-top-btn" title="Voltar ao topo">
+    <i data-lucide="arrow-up" class="w-5 h-5"></i>
+  </button>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
