@@ -16,31 +16,22 @@ html { scroll-behavior: smooth; }
 html, body { height: 100%; }
 
 /* ---------------------------------------------------------------------- */
-/* Fundo do site — imagem da ANDRADE GARAGE fixa atrás de toda a interface */
-/* Aplicada direto como background do body (sem pseudo-elemento/z-index),   */
-/* para funcionar de forma confiável em qualquer navegador/webview.        */
+/* Fundo do site — preto com destaques em roxo (sem imagem)                 */
 /* ---------------------------------------------------------------------- */
 body {
-  background-color: #0f1115;
+  background-color: #0a0a0c;
   background-image:
-    linear-gradient(180deg, rgba(10,10,12,0.35) 0%, rgba(10,10,12,0.55) 45%, rgba(10,10,12,0.88) 100%),
     radial-gradient(circle at 15% 0%, rgba(124,58,237,0.16), transparent 45%),
-    url("assets/andrade-garage-bg.png");
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position: center, center, center;
-  background-size: cover, cover, cover;
-  background-attachment: fixed, fixed, fixed;
+    radial-gradient(circle at 100% 30%, rgba(124,58,237,0.08), transparent 40%);
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 
-/* Componentes que ficam "sobre" o fundo fixo levam leve transparência para
-   deixar a imagem da garagem visível, mantendo a legibilidade do painel. */
 .sidebar {
-  background: rgba(24,25,28,0.82) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #16171a !important;
 }
 header.sticky {
-  background: rgba(15,17,21,0.6) !important;
+  background: rgba(10,10,12,0.85) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -106,6 +97,15 @@ footer { position: relative; z-index: 1; }
   color: #f4f4f5;
   text-shadow: 0 2px 18px rgba(124,58,237,0.45), 0 1px 0 rgba(0,0,0,0.6);
 }
+.banner-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity 0.15s ease;
+}
+.collapsed-logo-badge { display: none; }
+.sidebar.collapsed .banner-logo-img { display: none; }
+.sidebar.collapsed .collapsed-logo-badge { display: flex; }
 
 /* ---------------------------------------------------------------------- */
 /* Sidebar                                                                  */
@@ -117,10 +117,19 @@ footer { position: relative; z-index: 1; }
 .sidebar.open { transform: translateX(0); }
 
 .sidebar.collapsed { width: 84px; }
-.sidebar.collapsed .nav-label,
-.sidebar.collapsed .banner-title,
+.sidebar.collapsed .nav-label {
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  flex: 0 0 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .sidebar.collapsed .garage-banner p { opacity: 0; pointer-events: none; }
-.sidebar.collapsed .nav-item { justify-content: center; }
+.sidebar.collapsed .nav-item { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
 .sidebar.collapsed #collapseBtn { transform: rotate(180deg); }
 
 .nav-item {
