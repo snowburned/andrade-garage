@@ -125,13 +125,6 @@ const PARTS_CATEGORIES = [
   "Montagem Eletrônica",
   "ECU",
   "Intercooler",
-  "Radiador de Óleo",
-  "Coletor de Admissão",
-  "Corpo de Borboleta",
-  "Filtro de Ar",
-  "Escape",
-  "Bomba de Combustível",
-  "Junta do Cabeçote",
   "Moldes 3D",
 ];
 
@@ -150,13 +143,6 @@ const CATEGORY_ICONS = {
   "Montagem Eletrônica": "circuit-board",
   "ECU": "cpu",
   "Intercooler": "snowflake",
-  "Radiador de Óleo": "droplet",
-  "Coletor de Admissão": "wind",
-  "Corpo de Borboleta": "circle",
-  "Filtro de Ar": "filter",
-  "Escape": "flame",
-  "Bomba de Combustível": "fuel",
-  "Junta do Cabeçote": "square",
   "Moldes 3D": "printer",
 };
 
@@ -586,125 +572,6 @@ const PARTS = [
       { nome: "Núcleo Bruto de Intercooler", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-intercooler" } },
     ] },
 
-  /* --------------------------- RADIADOR DE ÓLEO ----------------------------- */
-  { id: "radiador-oleo-street", nome: "Radiador Óleo Street", categoria: "Radiador de Óleo",
-    materiais: [
-      { nome: "Mangote de Silicone", quantidade: 2 },
-      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
-    ] },
-  { id: "radiador-oleo-track", nome: "Radiador Óleo Track", categoria: "Radiador de Óleo",
-    materiais: [
-      { nome: "Mangote de Silicone", quantidade: 3 },
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
-    ] },
-  { id: "radiador-oleo-race", nome: "Radiador Óleo Race", categoria: "Radiador de Óleo",
-    materiais: [
-      { nome: "Mangote de Silicone", quantidade: 4 },
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Tampa Pressurizada", quantidade: 1 },
-      { nome: "Núcleo Bruto de Radiador", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
-    ] },
-  { id: "radiador-oleo-prototype", nome: "Radiador Óleo Prototype", categoria: "Radiador de Óleo",
-    materiais: [
-      { nome: "Barra de Titânio", quantidade: 1 },
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Radiador Óleo Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "radiador-oleo-race" } },
-      { nome: "Núcleo Bruto de Radiador", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-nucleo-bruto-radiador" } },
-    ] },
-
-  /* --------------------------- COLETOR DE ADMISSÃO -------------------------- */
-  { id: "coletor-admissao-street", nome: "Coletor Admissão Street", categoria: "Coletor de Admissão",
-    materiais: [{ nome: "Mangote de Silicone", quantidade: 1 }, { nome: "Pó de Alumínio", quantidade: 4 }] },
-  { id: "coletor-admissao-track", nome: "Coletor Admissão Track", categoria: "Coletor de Admissão",
-    materiais: [{ nome: "Mangote de Silicone", quantidade: 2 }, { nome: "Pó de Alumínio", quantidade: 6 }] },
-  { id: "coletor-admissao-race", nome: "Coletor Admissão Race", categoria: "Coletor de Admissão",
-    materiais: [{ nome: "Mangote de Silicone", quantidade: 2 }, { nome: "Sensor de Pressão", quantidade: 1 }, { nome: "Pó de Alumínio", quantidade: 9 }] },
-  { id: "coletor-admissao-prototype", nome: "Coletor Admissão Prototype", categoria: "Coletor de Admissão",
-    materiais: [
-      { nome: "Barra de Titânio", quantidade: 1 },
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Coletor Admissão Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "coletor-admissao-race" } },
-    ] },
-
-  /* ---------------------------- CORPO DE BORBOLETA --------------------------- */
-  { id: "corpo-borboleta-street", nome: "Corpo Borboleta Street", categoria: "Corpo de Borboleta",
-    materiais: [
-      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
-    ] },
-  { id: "corpo-borboleta-track", nome: "Corpo Borboleta Track", categoria: "Corpo de Borboleta",
-    materiais: [
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
-    ] },
-  { id: "corpo-borboleta-race", nome: "Corpo Borboleta Race", categoria: "Corpo de Borboleta",
-    materiais: [
-      { nome: "Sensor de Pressão", quantidade: 1 },
-      { nome: "Tratamento Térmico", quantidade: 1 },
-      { nome: "Corpo de Borboleta Bruto", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
-    ] },
-  { id: "corpo-borboleta-prototype", nome: "Corpo Borboleta Prototype", categoria: "Corpo de Borboleta",
-    materiais: [
-      { nome: "Barra de Titânio", quantidade: 1 },
-      { nome: "Corpo Borboleta Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "corpo-borboleta-race" } },
-      { nome: "Corpo de Borboleta Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-corpo-borboleta-bruto" } },
-    ] },
-
-  /* ------------------------------- FILTRO DE AR ------------------------------ */
-  { id: "filtro-ar-street", nome: "Filtro Ar Street", categoria: "Filtro de Ar",
-    materiais: [{ nome: "Filamento Plástico", quantidade: 2 }, { nome: "Composto de Borracha", quantidade: 1 }] },
-  { id: "filtro-ar-track", nome: "Filtro Ar Track", categoria: "Filtro de Ar",
-    materiais: [{ nome: "Filamento Plástico", quantidade: 3 }, { nome: "Composto de Borracha", quantidade: 1 }] },
-  { id: "filtro-ar-race", nome: "Filtro Ar Race", categoria: "Filtro de Ar",
-    materiais: [{ nome: "Filamento Plástico", quantidade: 5 }, { nome: "Composto de Borracha", quantidade: 2 }] },
-  { id: "filtro-ar-prototype", nome: "Filtro Ar Prototype", categoria: "Filtro de Ar",
-    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Filamento Plástico", quantidade: 6 }, { nome: "Composto de Borracha", quantidade: 2 }] },
-
-  /* ---------------------------------- ESCAPE --------------------------------- */
-  { id: "escape-street", nome: "Escape Street", categoria: "Escape",
-    materiais: [
-      { nome: "Abraçadeira V-Band", quantidade: 2 },
-      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
-    ] },
-  { id: "escape-track", nome: "Escape Track", categoria: "Escape",
-    materiais: [
-      { nome: "Abraçadeira V-Band", quantidade: 3 },
-      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
-    ] },
-  { id: "escape-race", nome: "Escape Race", categoria: "Escape",
-    materiais: [
-      { nome: "Abraçadeira V-Band", quantidade: 4 },
-      { nome: "Tratamento Térmico", quantidade: 1 },
-      { nome: "Coletor de Escape Bruto", quantidade: 2, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
-    ] },
-  { id: "escape-prototype", nome: "Escape Prototype", categoria: "Escape",
-    materiais: [
-      { nome: "Barra de Titânio", quantidade: 1 },
-      { nome: "Abraçadeira V-Band", quantidade: 4 },
-      { nome: "Escape Race", quantidade: 1, forjada: true, ref: { type: "parte", id: "escape-race" } },
-      { nome: "Coletor de Escape Bruto", quantidade: 1, forjada: true, ref: { type: "molde", id: "molde-coletor-escape-bruto" } },
-    ] },
-
-  /* ---------------------------- BOMBA DE COMBUSTÍVEL ------------------------- */
-  { id: "bomba-combustivel-street", nome: "Bomba Combustível Street", categoria: "Bomba de Combustível",
-    materiais: [{ nome: "Componente Eletrônico", quantidade: 2 }, { nome: "Mangote de Silicone", quantidade: 1 }] },
-  { id: "bomba-combustivel-track", nome: "Bomba Combustível Track", categoria: "Bomba de Combustível",
-    materiais: [{ nome: "Componente Eletrônico", quantidade: 3 }, { nome: "Mangote de Silicone", quantidade: 2 }] },
-  { id: "bomba-combustivel-race", nome: "Bomba Combustível Race", categoria: "Bomba de Combustível",
-    materiais: [{ nome: "Componente Eletrônico", quantidade: 4 }, { nome: "Fio de Cobre", quantidade: 1 }, { nome: "Mangote de Silicone", quantidade: 2 }] },
-  { id: "bomba-combustivel-prototype", nome: "Bomba Combustível Prototype", categoria: "Bomba de Combustível",
-    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Componente Eletrônico", quantidade: 5 }, { nome: "Fio de Cobre", quantidade: 1 }] },
-
-  /* ------------------------------ JUNTA DO CABEÇOTE --------------------------- */
-  { id: "junta-cabecote-street", nome: "Junta Cabeçote Street", categoria: "Junta do Cabeçote",
-    materiais: [{ nome: "Composto de Borracha", quantidade: 1 }] },
-  { id: "junta-cabecote-race", nome: "Junta Cabeçote Race", categoria: "Junta do Cabeçote",
-    materiais: [{ nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 1 }] },
-  { id: "junta-cabecote-track", nome: "Junta Cabeçote Track", categoria: "Junta do Cabeçote",
-    materiais: [{ nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 2 }] },
-  { id: "junta-cabecote-prototype", nome: "Junta Cabeçote Prototype", categoria: "Junta do Cabeçote",
-    materiais: [{ nome: "Barra de Titânio", quantidade: 1 }, { nome: "Composto de Borracha", quantidade: 2 }, { nome: "Pó de Aço", quantidade: 2 }] },
-
   /* ----------------------------- MOLDES 3D --------------------------------- */
   { id: "base-ecu", nome: "Base de ECU", categoria: "Moldes 3D",
     materiais: [{ nome: "Filamento Plástico", quantidade: 4 }, { nome: "Composto de Borracha", quantidade: 1 }] },
@@ -726,6 +593,75 @@ const PARTS = [
     materiais: [{ nome: "Filamento Plástico", quantidade: 4 }, { nome: "Composto de Borracha", quantidade: 2 }] },
   { id: "suporte-ecu", nome: "Suporte de ECU", categoria: "Moldes 3D",
     materiais: [{ nome: "Filamento Plástico", quantidade: 3 }, { nome: "Composto de Borracha", quantidade: 2 }] },
+];
+
+// ---------------------------------------------------------------------------
+// PEÇAS LOJA — peças que a oficina NÃO fabrica, apenas compra pronta de
+// fornecedores externos. Por isso não têm receita (materiais) nem status de
+// "pode forjar": só id, nome, categoria e valor de compra.
+// ---------------------------------------------------------------------------
+const LOJA_CATEGORIES = [
+  "Coletor de Admissão",
+  "Corpo de Borboleta",
+  "Filtro de Ar",
+  "Radiador de Óleo",
+  "Escape",
+  "Bomba de Combustível",
+  "Junta do Cabeçote",
+];
+
+const LOJA_CATEGORY_ICONS = {
+  "Coletor de Admissão": "wind",
+  "Corpo de Borboleta": "circle",
+  "Filtro de Ar": "filter",
+  "Radiador de Óleo": "droplet",
+  "Escape": "flame",
+  "Bomba de Combustível": "fuel",
+  "Junta do Cabeçote": "square",
+};
+
+const LOJA_ITEMS = [
+  /* --------------------------- COLETOR DE ADMISSÃO -------------------------- */
+  { id: "coletor-admissao-street", nome: "Coletor Admissão Street", categoria: "Coletor de Admissão", valor: 13035 },
+  { id: "coletor-admissao-track", nome: "Coletor Admissão Track", categoria: "Coletor de Admissão", valor: 23210 },
+  { id: "coletor-admissao-race", nome: "Coletor Admissão Race", categoria: "Coletor de Admissão", valor: 29205 },
+  { id: "coletor-admissao-prototype", nome: "Coletor Admissão Prototype", categoria: "Coletor de Admissão", valor: 35200 },
+
+  /* ---------------------------- CORPO DE BORBOLETA --------------------------- */
+  { id: "corpo-borboleta-street", nome: "Corpo Borboleta Street", categoria: "Corpo de Borboleta", valor: 9735 },
+  { id: "corpo-borboleta-track", nome: "Corpo Borboleta Track", categoria: "Corpo de Borboleta", valor: 14025 },
+  { id: "corpo-borboleta-race", nome: "Corpo Borboleta Race", categoria: "Corpo de Borboleta", valor: 20405 },
+  { id: "corpo-borboleta-prototype", nome: "Corpo Borboleta Prototype", categoria: "Corpo de Borboleta", valor: 26730 },
+
+  /* ------------------------------- FILTRO DE AR ------------------------------ */
+  { id: "filtro-ar-street", nome: "Filtro Ar Street", categoria: "Filtro de Ar", valor: 990 },
+  { id: "filtro-ar-track", nome: "Filtro Ar Track", categoria: "Filtro de Ar", valor: 2200 },
+  { id: "filtro-ar-race", nome: "Filtro Ar Race", categoria: "Filtro de Ar", valor: 8030 },
+  { id: "filtro-ar-prototype", nome: "Filtro Ar Prototype", categoria: "Filtro de Ar", valor: 13915 },
+
+  /* --------------------------- RADIADOR DE ÓLEO ----------------------------- */
+  { id: "radiador-oleo-street", nome: "Radiador Óleo Street", categoria: "Radiador de Óleo", valor: 4950 },
+  { id: "radiador-oleo-track", nome: "Radiador Óleo Track", categoria: "Radiador de Óleo", valor: 6820 },
+  { id: "radiador-oleo-race", nome: "Radiador Óleo Race", categoria: "Radiador de Óleo", valor: 13695 },
+  { id: "radiador-oleo-prototype", nome: "Radiador Óleo Prototype", categoria: "Radiador de Óleo", valor: 25135 },
+
+  /* ---------------------------------- ESCAPE --------------------------------- */
+  { id: "escape-street", nome: "Escape Street", categoria: "Escape", valor: 32670 },
+  { id: "escape-track", nome: "Escape Track", categoria: "Escape", valor: 56430 },
+  { id: "escape-race", nome: "Escape Race", categoria: "Escape", valor: 66495 },
+  { id: "escape-prototype", nome: "Escape Prototype", categoria: "Escape", valor: 76560 },
+
+  /* ---------------------------- BOMBA DE COMBUSTÍVEL ------------------------- */
+  { id: "bomba-combustivel-street", nome: "Bomba Combustível Street", categoria: "Bomba de Combustível", valor: 1925 },
+  { id: "bomba-combustivel-track", nome: "Bomba Combustível Track", categoria: "Bomba de Combustível", valor: 4070 },
+  { id: "bomba-combustivel-race", nome: "Bomba Combustível Race", categoria: "Bomba de Combustível", valor: 6930 },
+  { id: "bomba-combustivel-prototype", nome: "Bomba Combustível Prototype", categoria: "Bomba de Combustível", valor: 10450 },
+
+  /* ------------------------------ JUNTA DO CABEÇOTE --------------------------- */
+  { id: "junta-cabecote-street", nome: "Junta Cabeçote Street", categoria: "Junta do Cabeçote", valor: 660 },
+  { id: "junta-cabecote-race", nome: "Junta Cabeçote Race", categoria: "Junta do Cabeçote", valor: 2970 },
+  { id: "junta-cabecote-track", nome: "Junta Cabeçote Track", categoria: "Junta do Cabeçote", valor: 3630 },
+  { id: "junta-cabecote-prototype", nome: "Junta Cabeçote Prototype", categoria: "Junta do Cabeçote", valor: 4070 },
 ];
 
 // ---------------------------------------------------------------------------

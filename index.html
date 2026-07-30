@@ -86,6 +86,11 @@
           <i data-lucide="drafting-compass" class="w-[18px] h-[18px] shrink-0"></i>
           <span class="nav-label">Moldes CNC</span>
         </button>
+        <button data-page="loja" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="shopping-cart" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Peças LOJA</span>
+        </button>
         <button data-page="configuracoes" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
           <span class="nav-bar"></span>
           <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
@@ -308,6 +313,32 @@
           <div id="moldesEmptyState" class="hidden p-10 text-center text-gray-500">
             <i data-lucide="drafting-compass" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
             Nenhum molde encontrado.
+          </div>
+        </section>
+
+        <!-- ======================= PÁGINA: PEÇAS LOJA ======================= -->
+        <section id="page-loja" class="page-section hidden space-y-5">
+
+          <div class="card-panel !p-4">
+            <div class="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+              <div class="search-wrap relative flex-1 max-w-md">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <input id="lojaSearch" type="text" placeholder="Pesquisar peça da loja..."
+                  class="input-field pl-9 w-full" autocomplete="off" />
+                <button type="button" class="search-clear-btn" data-clear="lojaSearch" title="Limpar busca">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="filter-pills" id="lojaCategoryFilters">
+                <button data-cat="Todos" class="filter-pill active">Todos</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="lojaGroups" class="space-y-6"></div>
+          <div id="lojaEmptyState" class="hidden p-10 text-center text-gray-500 card-panel">
+            <i data-lucide="shopping-cart" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            Nenhuma peça encontrada.
           </div>
         </section>
 

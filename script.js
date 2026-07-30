@@ -14,6 +14,7 @@ const state = {
   bau: { search: "", category: "Todos", sort: "none" },
   forjados: { search: "", view: "categories", activeCategory: null },
   moldes: { search: "" },
+  loja: { search: "", category: "Todos" },
   editingItemId: null,
   detailStack: [], // pilha de navegação do modal de detalhes { type: 'parte'|'molde', id }
 };
@@ -23,6 +24,7 @@ const PAGE_META = {
   bau: { title: "Baú", subtitle: "Controle completo do estoque de materiais" },
   forjados: { title: "Peças", subtitle: "Catálogo completo de peças da oficina, organizado por sistema" },
   moldescnc: { title: "Moldes CNC", subtitle: "Peças brutas usinadas, usadas como base para forjar componentes" },
+  loja: { title: "Peças LOJA", subtitle: "Peças compradas prontas de fornecedores externos — não são fabricadas na oficina" },
   configuracoes: { title: "Configurações", subtitle: "Preferências do sistema" },
 };
 
@@ -140,6 +142,7 @@ function navigateTo(page) {
   if (page === "bau") renderBauPage();
   if (page === "forjados") renderForjadosPage();
   if (page === "moldescnc") renderMoldesPage();
+  if (page === "loja") renderLojaPage();
   if (page === "configuracoes") renderConfiguracoes();
 }
 
@@ -589,6 +592,66 @@ function renderMoldesPage() {
   refreshIcons();
 }
 
+/* ============================================================= loja === */
+// Peças que a oficina NÃO fabrica — apenas compra pronta de fornecedores.
+// Sem receita, sem checagem de estoque: é só um catálogo com preço.
+
+function getFilteredLoja() {
+  const q = state.loja.search.trim().toLowerCase();
+  const cat = state.loja.category;
+  let items = [...LOJA_ITEMS];
+  if (cat !== "Todos") items = items.filter((i) => i.categoria === cat);
+  if (q) items = items.filter((i) => i.nome.toLowerCase().includes(q));
+  return items;
+}
+
+function lojaItemCard(item) {
+  return `
+  <div class="molde-row-card !cursor-default">
+    <div class="molde-row-image">
+      <i data-lucide="${LOJA_CATEGORY_ICONS[item.categoria] || "shopping-cart"}" class="w-4 h-4 opacity-90"></i>
+      <span class="molde-row-blur"></span>
+    </div>
+    <div class="molde-row-body">
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-xs font-bold text-white truncate">${item.nome}</p>
+      </div>
+      <p class="text-[9px] uppercase tracking-wide text-accentlight font-semibold">${fmtMoney(item.valor)}</p>
+    </div>
+  </div>`;
+}
+
+function renderLojaPage() {
+  const items = getFilteredLoja();
+  const groupsEl = document.getElementById("lojaGroups");
+  const empty = document.getElementById("lojaEmptyState");
+
+  if (!items.length) {
+    groupsEl.innerHTML = "";
+    empty.classList.remove("hidden");
+    refreshIcons();
+    return;
+  }
+  empty.classList.add("hidden");
+
+  const categoriasComItens = LOJA_CATEGORIES.filter((cat) => items.some((i) => i.categoria === cat));
+  groupsEl.innerHTML = categoriasComItens.map((cat) => {
+    const catItems = items.filter((i) => i.categoria === cat);
+    return `
+      <div class="card-panel">
+        <h3 class="flex items-center gap-2 text-white font-semibold mb-4">
+          <i data-lucide="${LOJA_CATEGORY_ICONS[cat] || "shopping-cart"}" class="w-[18px] h-[18px] text-accentlight"></i>
+          ${cat}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+          ${catItems.map(lojaItemCard).join("")}
+        </div>
+      </div>`;
+  }).join("");
+
+  refreshIcons();
+}
+
 /* ===================================================== modal de detalhes === */
 // Modal reutilizado tanto para "Peças" quanto para "Moldes CNC". Suporta
 // navegação em pilha: ao clicar num material marcado como "peça forjada",
@@ -776,6 +839,22 @@ function init() {
     renderMoldesPage();
   });
 
+  // Peças LOJA: busca + filtro de categoria (pills geradas dinamicamente)
+  const lojaFilters = document.getElementById("lojaCategoryFilters");
+  lojaFilters.innerHTML += LOJA_CATEGORIES.map((cat) => `<button data-cat="${cat}" class="filter-pill">${cat}</button>`).join("");
+  document.getElementById("lojaSearch").addEventListener("input", (e) => {
+    state.loja.search = e.target.value;
+    renderLojaPage();
+  });
+  lojaFilters.addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-pill");
+    if (!btn) return;
+    lojaFilters.querySelectorAll(".filter-pill").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.loja.category = btn.dataset.cat;
+    renderLojaPage();
+  });
+
   // Modal de detalhes
   document.getElementById("detailBackBtn").addEventListener("click", backDetail);
 
@@ -826,7 +905,7 @@ function init() {
   // Atalho de teclado "/" para focar a busca da página atual
   document.addEventListener("keydown", (e) => {
     if (e.key !== "/" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-    const searchByPage = { bau: "bauSearch", forjados: "forjadosSearch", moldescnc: "moldesSearch" };
+    const searchByPage = { bau: "bauSearch", forjados: "forjadosSearch", moldescnc: "moldesSearch", loja: "lojaSearch" };
     const inputId = searchByPage[state.currentPage];
     if (!inputId) return;
     e.preventDefault();
