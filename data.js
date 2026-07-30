@@ -16,10 +16,10 @@ const BAU_ITEMS = [
   { id: "titanio",         nome: "Titânio",         categoria: "Minérios",        quantidade: 8,   ultimaAtualizacao: "2026-07-24" },
 
   // Barras
-  { id: "barra-cobre",     nome: "Barra de Cobre",  categoria: "Barras",          quantidade: 30,  ultimaAtualizacao: "2026-07-27" },
+  { id: "barra-cobre",     nome: "Barra de Cobre",  categoria: "Barras",          quantidade: 30,  ultimaAtualizacao: "2026-07-27", imagem: "assets/bau/barra-de-cobre.png" },
   { id: "barra-ferro",     nome: "Barra de Ferro",  categoria: "Barras",          quantidade: 60,  ultimaAtualizacao: "2026-07-28" },
   { id: "barra-aco",       nome: "Barra de Aço",    categoria: "Barras",          quantidade: 40,  ultimaAtualizacao: "2026-07-29" },
-  { id: "barra-prata",     nome: "Barra de Prata",  categoria: "Barras",          quantidade: 5,   ultimaAtualizacao: "2026-07-22" },
+  { id: "barra-prata",     nome: "Barra de Prata",  categoria: "Barras",          quantidade: 5,   ultimaAtualizacao: "2026-07-22", imagem: "assets/bau/barra-de-prata.png" },
   { id: "barra-titanio",   nome: "Barra de Titânio",categoria: "Barras",          quantidade: 3,   ultimaAtualizacao: "2026-07-20" },
 
   // Barras Refinadas

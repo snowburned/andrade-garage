@@ -81,6 +81,17 @@ footer { position: relative; z-index: 1; }
   inset: 0;
   z-index: 2;
   margin: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(157,92,255,0.35);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 4px 14px -4px rgba(124,58,237,0.5);
+}
+.collapsed-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .sidebar.collapsed .banner-logo-img { display: none; }
 .sidebar.collapsed .collapsed-logo-badge { display: flex; }
@@ -451,6 +462,16 @@ footer { position: relative; z-index: 1; }
   color: var(--mat-color, #9d5cff);
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
 }
+.bau-item-photo {
+  position: relative;
+  z-index: 1;
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.55));
+  transition: transform 0.2s ease;
+}
+.bau-item-card:hover .bau-item-photo { transform: scale(1.05); }
 .bau-item-qty {
   position: absolute;
   left: 8px;
