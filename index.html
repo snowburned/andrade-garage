@@ -51,13 +51,8 @@
 
       <!-- Banner -->
       <div class="garage-banner relative w-full h-[110px] shrink-0 overflow-hidden border-b border-border">
-        <div class="banner-texture"></div>
-        <div class="banner-glow"></div>
-        <div class="banner-grid"></div>
-        <div class="relative z-10 h-full flex items-center justify-center px-4">
-          <img src="assets/logo-andrade-garage.png" alt="ANDRADE GARAGE" class="banner-logo-img" />
-          <div class="collapsed-logo-badge w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accentlight items-center justify-center text-sm font-extrabold text-white shrink-0">AG</div>
-        </div>
+        <img src="assets/logo-andrade-garage.png" alt="ANDRADE GARAGE" class="banner-logo-img" />
+        <div class="collapsed-logo-badge w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accentlight items-center justify-center text-sm font-extrabold text-white shrink-0">AG</div>
         <button id="collapseBtn" class="hidden lg:flex absolute top-3 right-3 z-20 w-7 h-7 items-center justify-center rounded-md bg-black/30 hover:bg-black/50 border border-white/10 text-gray-300 transition-colors" title="Recolher menu">
           <i data-lucide="chevrons-left" class="w-4 h-4"></i>
         </button>
@@ -227,25 +222,10 @@
             </div>
           </div>
 
-          <div class="card-panel !p-0 overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="text-left text-gray-400 text-xs uppercase tracking-wider border-b border-border">
-                    <th class="px-5 py-3 font-semibold">Nome do Item</th>
-                    <th class="px-5 py-3 font-semibold">Categoria</th>
-                    <th class="px-5 py-3 font-semibold">Quantidade</th>
-                    <th class="px-5 py-3 font-semibold">Última Atualização</th>
-                    <th class="px-5 py-3 font-semibold text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="bauTableBody"></tbody>
-              </table>
-            </div>
-            <div id="bauEmptyState" class="hidden p-10 text-center text-gray-500">
-              <i data-lucide="package-search" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
-              Nenhum item encontrado.
-            </div>
+          <div id="bauGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+          <div id="bauEmptyState" class="hidden p-10 text-center text-gray-500 card-panel">
+            <i data-lucide="package-search" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            Nenhum item encontrado.
           </div>
         </section>
 

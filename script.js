@@ -46,6 +46,46 @@ function findBauItemByName(nome) {
   return bauItems.find((i) => i.nome.toLowerCase() === nome.toLowerCase());
 }
 
+// Tema visual (cor + ícone) por tipo de material, usado nos "slots" do Baú
+const MATERIAL_THEME = {
+  cobre:    { color: "#e0955f" },
+  ferro:    { color: "#a9adb3" },
+  aco:      { color: "#8fb0d6" },
+  prata:    { color: "#e7e9ec" },
+  titanio:  { color: "#eab308" },
+  aluminio: { color: "#cbd5e1" },
+};
+
+function materialKeyFromName(nome) {
+  const n = nome.toLowerCase();
+  if (n.includes("cobre")) return "cobre";
+  if (n.includes("ferro")) return "ferro";
+  if (n.includes("aço") || n.includes("aco")) return "aco";
+  if (n.includes("prata")) return "prata";
+  if (n.includes("titânio") || n.includes("titanio")) return "titanio";
+  if (n.includes("alumínio") || n.includes("aluminio")) return "aluminio";
+  return "default";
+}
+
+function getBauItemVisual(item) {
+  const key = materialKeyFromName(item.nome);
+  const theme = MATERIAL_THEME[key] || { color: "#9d5cff" };
+  let icon = "gem";
+  if (item.categoria === "Barras") icon = "rectangle-horizontal";
+  else if (item.categoria === "Barras Refinadas") {
+    icon = item.nome.toLowerCase().includes("fio") ? "cable" : "sparkles";
+  }
+  return { color: theme.color, icon };
+}
+
+function hexToRgba(hex, alpha) {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const bigint = parseInt(full, 16);
+  const r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function badgeClassForCategory(cat) {
   switch (cat) {
     case "Minérios": return "badge-minerios";
@@ -212,34 +252,37 @@ function getFilteredBauItems() {
 
 function renderBauPage() {
   const items = getFilteredBauItems();
-  const tbody = document.getElementById("bauTableBody");
+  const grid = document.getElementById("bauGrid");
   const empty = document.getElementById("bauEmptyState");
 
   if (!items.length) {
-    tbody.innerHTML = "";
+    grid.innerHTML = "";
     empty.classList.remove("hidden");
   } else {
     empty.classList.add("hidden");
     const maxQty = Math.max(...bauItems.map((i) => i.quantidade), 1);
-    tbody.innerHTML = items.map((item) => `
-      <tr>
-        <td class="px-5 py-3.5 font-medium text-white">${item.nome}</td>
-        <td class="px-5 py-3.5"><span class="category-badge ${badgeClassForCategory(item.categoria)}">${item.categoria}</span></td>
-        <td class="px-5 py-3.5">
-          <div class="flex items-center gap-2">
-            <span class="text-gray-200 font-semibold w-10">${item.quantidade}</span>
-            <div class="qty-bar-track"><div class="qty-bar-fill" style="width:${Math.min(100, (item.quantidade / maxQty) * 100)}%"></div></div>
-          </div>
-        </td>
-        <td class="px-5 py-3.5 text-gray-400">${fmtDate(item.ultimaAtualizacao)}</td>
-        <td class="px-5 py-3.5">
-          <div class="flex items-center justify-end gap-1">
-            <button class="icon-btn" title="Editar" onclick="openItemModal('${item.id}')"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-            <button class="icon-btn danger" title="Remover" onclick="deleteItem('${item.id}')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
+    grid.innerHTML = items.map((item) => {
+      const visual = getBauItemVisual(item);
+      const pct = Math.min(100, (item.quantidade / maxQty) * 100);
+      const bg = `radial-gradient(circle at 30% 20%, ${hexToRgba(visual.color, 0.3)}, transparent 65%), linear-gradient(160deg, #26282c 0%, #1a1b1e 100%)`;
+      return `
+      <div class="bau-item-card" title="Última atualização: ${fmtDate(item.ultimaAtualizacao)}">
+        <div class="bau-item-actions">
+          <button class="icon-btn" title="Editar" onclick="openItemModal('${item.id}')"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button class="icon-btn danger" title="Remover" onclick="deleteItem('${item.id}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div class="bau-item-visual" style="--mat-color:${visual.color}; background:${bg};">
+          <i data-lucide="${visual.icon}" class="bau-item-icon w-9 h-9"></i>
+          <span class="bau-item-qty">${item.quantidade}x</span>
+        </div>
+        <div class="bau-item-body">
+          <p class="bau-item-name" title="${item.nome}">${item.nome}</p>
+          <span class="category-badge bau-item-catbadge ${badgeClassForCategory(item.categoria)}">${item.categoria}</span>
+          <div class="qty-bar-track w-full mt-2"><div class="qty-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      `;
+    }).join("");
   }
   refreshIcons();
 }
