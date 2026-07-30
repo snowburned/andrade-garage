@@ -346,7 +346,7 @@ function partRowCard(p) {
   const { canMake } = checkDirectStock(p.materiais);
   const hasForjada = p.materiais.some((m) => m.forjada);
   const imageContent = p.imagem
-    ? `<img src="${p.imagem}" alt="${p.nome}" class="part-row-photo" loading="lazy" />`
+    ? `<img src="${p.imagem}" alt="${p.nome}" class="part-row-photo" loading="lazy" onerror="this.style.display='none'" />`
     : `<i data-lucide="${CATEGORY_ICONS[p.categoria] || "wrench"}" class="w-6 h-6 opacity-90"></i>`;
   return `
   <button type="button" class="part-row-card" onclick="openDetailModal('parte','${p.id}')">
@@ -555,7 +555,7 @@ function renderDetailModal() {
 
   const isMolde = entry.type === "molde";
   document.getElementById("detailModalIconWrap").innerHTML = data.imagem
-    ? `<img src="${data.imagem}" alt="${data.nome}" class="detail-icon-photo" />`
+    ? `<img src="${data.imagem}" alt="${data.nome}" class="detail-icon-photo" onerror="this.parentElement.innerHTML='<i data-lucide=\\'${isMolde ? "drafting-compass" : (CATEGORY_ICONS[data.categoria] || "wrench")}\\' class=\\'w-5 h-5\\'></i>'; lucide.createIcons();" />`
     : `<i data-lucide="${isMolde ? "drafting-compass" : (CATEGORY_ICONS[data.categoria] || "wrench")}" class="w-5 h-5"></i>`;
   document.getElementById("detailModalTitle").textContent = data.nome;
   document.getElementById("detailModalSubtitle").textContent =
@@ -580,7 +580,7 @@ function renderDetailModal() {
 
   const { canMake, missing } = checkDirectStock(data.materiais);
   document.getElementById("detailModalBody").innerHTML = `
-    ${data.imagem ? `<div class="detail-photo-banner"><img src="${data.imagem}" alt="${data.nome}" loading="lazy" /></div>` : ""}
+    ${data.imagem ? `<div class="detail-photo-banner"><img src="${data.imagem}" alt="${data.nome}" loading="lazy" onerror="this.parentElement.style.display='none'" /></div>` : ""}
     <div class="status-pill ${canMake ? "status-ok" : "status-fail"} text-sm mb-4">
       <i data-lucide="${canMake ? "check-circle-2" : "x-circle"}" class="w-4 h-4"></i>
       ${canMake ? "Materiais diretos disponíveis no Baú" : `Faltam ${missing.length} material(is) direto(s)`}

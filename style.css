@@ -322,6 +322,7 @@ footer { position: relative; z-index: 1; }
 }
 .part-row-image {
   position: relative;
+  overflow: hidden;
   flex: 0 0 20%;
   display: flex; align-items: center; justify-content: center;
   background:
