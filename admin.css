@@ -1,0 +1,144 @@
+/* ==========================================================================
+   ANDRADE GARAGE — admin.css
+   Estilos específicos do painel /admin.html
+   ========================================================================== */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #9ca3af;
+  background: transparent;
+  border: 1px solid #202024;
+  transition: all 0.2s ease;
+}
+.icon-btn:hover { background: #1c1c20; color: #fff; border-color: rgba(124,58,237,0.4); }
+
+.admin-tab {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 7px;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+.admin-tab:hover { color: #fff; }
+.admin-tab.active { background: #7c3aed; color: #fff; }
+
+.admin-card {
+  background: #131316;
+  border: 1px solid #202024;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: cardIn 0.3s ease both;
+}
+
+.admin-card-drop {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(circle at 30% 20%, rgba(124,58,237,0.12), transparent 65%), linear-gradient(160deg, #1c1d21 0%, #131316 100%);
+  cursor: pointer;
+  overflow: hidden;
+}
+.admin-card-drop.dragover { outline: 2px dashed #9d5cff; outline-offset: -4px; }
+
+.admin-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+.admin-card-icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 34px;
+  height: 34px;
+  color: #4b4b52;
+}
+
+.admin-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(6,6,7,0.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.admin-card-drop:hover .admin-card-overlay,
+.admin-card-drop.dragover .admin-card-overlay { opacity: 1; }
+
+.admin-card-body { padding: 0.6rem 0.7rem 0.7rem; }
+.admin-card-name {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-card-cat {
+  font-size: 0.66rem;
+  color: #6b7280;
+  margin-bottom: 0.4rem;
+}
+.admin-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+}
+
+.admin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+.admin-status.saving { background: rgba(124,58,237,0.16); color: #c4a6ff; }
+.admin-status.saved { background: rgba(52,211,153,0.14); color: #6ee7b7; }
+.admin-status.error { background: rgba(239,68,68,0.14); color: #fca5a5; cursor: help; }
+
+.admin-remove-btn {
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+.admin-remove-btn:hover { color: #f87171; }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1c1c20;
+  border: 1px solid #202024;
+  color: #f4f4f5;
+  font-size: 0.8rem;
+  padding: 0.7rem 1.1rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 100;
+  max-width: 90vw;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-success { border-color: rgba(52,211,153,0.4); }
+.toast-error { border-color: rgba(239,68,68,0.4); }

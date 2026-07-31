@@ -8,56 +8,6 @@
 // Cópia mutável do estoque (para permitir "restaurar dados")
 let bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
 
-// ---------------------------------------------------------------------------
-// GERENCIADOR DE IMAGENS — permite trocar a imagem de qualquer item do Baú,
-// Peça ou Molde CNC direto pela interface (Configurações). As imagens e o
-// mapeamento (data/image-overrides.json) são commitados no repositório
-// GitHub por uma function serverless (Vercel) — o token do GitHub nunca
-// fica no navegador, só a senha de admin passa por aqui, e mesmo essa é
-// conferida de verdade do lado do servidor.
-// ---------------------------------------------------------------------------
-
-// >>> Troque pela URL do seu projeto na Vercel depois do deploy <<<
-const IMAGE_API_URL = "https://andrade-garage-api.vercel.app";
-// Caminho do JSON de overrides, relativo ao index.html (mesmo repositório)
-const OVERRIDES_JSON_PATH = "data/image-overrides.json";
-
-let remoteImageOverrides = {};
-let adminPassword = null; // fica só em memória (+ sessionStorage) durante a sessão
-let imgMgrState = { search: "", filter: "Todos" };
-
-async function fetchImageOverrides() {
-  try {
-    const resp = await fetch(`${OVERRIDES_JSON_PATH}?t=${Date.now()}`, { cache: "no-store" });
-    remoteImageOverrides = resp.ok ? await resp.json() : {};
-  } catch {
-    remoteImageOverrides = {};
-  }
-}
-function getAllImageableItems() {
-  return [
-    ...bauItems.map((i) => ({ ref: i, tipo: "Baú" })),
-    ...MOLDES_CNC.map((i) => ({ ref: i, tipo: "Molde CNC" })),
-    ...PARTS.map((i) => ({ ref: i, tipo: "Peça" })),
-  ];
-}
-// Aplica os overrides (vindos do GitHub) sobre os itens em memória,
-// preservando a imagem original (data.js) para permitir reverter.
-function applyImageOverrides() {
-  getAllImageableItems().forEach(({ ref }) => {
-    if (ref._imagemOriginal === undefined) ref._imagemOriginal = ref.imagem || null;
-    ref.imagem = remoteImageOverrides[ref.id] || ref._imagemOriginal || null;
-  });
-}
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 // Estado da UI
 const state = {
   currentPage: "dashboard",
@@ -125,7 +75,7 @@ function materialKeyFromName(nome) {
 
 function getBauItemVisual(item) {
   const key = materialKeyFromName(item.nome);
-  const theme = MATERIAL_THEME[key] || { color: "#c2632f" };
+  const theme = MATERIAL_THEME[key] || { color: "#9d5cff" };
   let icon = "gem";
   if (item.categoria === "Barras") icon = "rectangle-horizontal";
   else if (item.categoria === "Barras Refinadas") {
@@ -362,7 +312,7 @@ function renderDashboard() {
   const low = computeEstoqueAbaixoMinimo().sort((a, b) => a.quantidade - b.quantidade);
   document.getElementById("dashLowStock").innerHTML = low.length
     ? low.map((i) => `
-        <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#2a2419] last:border-0">
+        <div class="flex items-center justify-between text-sm py-1.5 border-b border-[#26282c] last:border-0">
           <span class="text-gray-300">${i.nome}</span>
           <span class="text-amber-400 font-semibold">${i.quantidade} / ${i.estoqueMinimo} un</span>
         </div>`).join("")
@@ -404,7 +354,7 @@ function renderBauPage() {
     grid.innerHTML = items.map((item) => {
       const visual = getBauItemVisual(item);
       const pct = Math.min(100, (item.quantidade / maxQty) * 100);
-      const bg = `radial-gradient(circle at 30% 20%, ${hexToRgba(visual.color, 0.3)}, transparent 65%), linear-gradient(160deg, #2a2419 0%, #0f0d09 100%)`;
+      const bg = `radial-gradient(circle at 30% 20%, ${hexToRgba(visual.color, 0.3)}, transparent 65%), linear-gradient(160deg, #26282c 0%, #1a1b1e 100%)`;
       const visualContent = item.imagem
         ? `<img src="${item.imagem}" alt="${item.nome}" class="bau-item-photo" onerror="this.style.display='none';" />`
         : `<i data-lucide="${visual.icon}" class="bau-item-icon"></i>`;
@@ -1189,176 +1139,6 @@ function renderDetailModal() {
 function renderConfiguracoes() {
   document.getElementById("cfgTotalItens").textContent = bauItems.length;
   document.getElementById("cfgTotalReceitas").textContent = PARTS.length;
-  renderImageManager();
-}
-
-/* ===================================================== gerenciador de imagens === */
-
-function renderImageManager() {
-  const grid = document.getElementById("imgMgrGrid");
-  if (!grid) return;
-
-  let items = getAllImageableItems();
-  if (imgMgrState.filter !== "Todos") items = items.filter((i) => i.tipo === imgMgrState.filter);
-  if (imgMgrState.search.trim()) {
-    const q = imgMgrState.search.trim().toLowerCase();
-    items = items.filter((i) => i.ref.nome.toLowerCase().includes(q));
-  }
-
-  document.getElementById("imgMgrCount").textContent = `${items.length} ${items.length === 1 ? "item" : "itens"}`;
-
-  grid.innerHTML = items.map(({ ref, tipo }) => {
-    const thumb = ref.imagem
-      ? `<img src="${ref.imagem}" class="img-mgr-thumb-img" onerror="this.style.display='none'" />`
-      : `<i data-lucide="image-off" class="w-4 h-4 text-gray-600"></i>`;
-    return `
-      <div class="img-mgr-row">
-        <div class="img-mgr-thumb">${thumb}</div>
-        <div class="img-mgr-info">
-          <p class="img-mgr-name">${ref.nome}</p>
-          <p class="img-mgr-tag">${tipo}</p>
-        </div>
-        <button type="button" class="btn-secondary img-mgr-edit-btn" data-id="${ref.id}">
-          ${ref.imagem ? "Trocar" : "Adicionar"}
-        </button>
-      </div>`;
-  }).join("") || `<p class="text-sm text-gray-500 py-6 text-center">Nenhum item encontrado.</p>`;
-
-  refreshIcons();
-}
-
-function renderImgEditPreview(src) {
-  const wrap = document.getElementById("imgEditPreviewWrap");
-  wrap.innerHTML = src
-    ? `<img src="${src}" alt="preview" onerror="this.parentElement.innerHTML='<i data-lucide=\\'image-off\\' class=\\'w-6 h-6 text-gray-600\\'></i>'; lucide.createIcons();" />`
-    : `<i data-lucide="image" class="w-6 h-6 text-gray-600"></i>`;
-  refreshIcons();
-}
-
-function openImageEditModal(id) {
-  const found = getAllImageableItems().find((i) => i.ref.id === id);
-  if (!found) return;
-  document.getElementById("imgEditItemId").value = id;
-  document.getElementById("imgEditItemName").textContent = found.ref.nome;
-  document.getElementById("imgEditUrl").value = (found.ref.imagem && found.ref.imagem.startsWith("http")) ? found.ref.imagem : "";
-  document.getElementById("imgEditFile").value = "";
-  renderImgEditPreview(found.ref.imagem);
-  openModal("imageEditModal");
-}
-
-async function saveImageEdit() {
-  const id = document.getElementById("imgEditItemId").value;
-  const url = document.getElementById("imgEditUrl").value.trim();
-  const file = document.getElementById("imgEditFile").files[0];
-  const found = getAllImageableItems().find((i) => i.ref.id === id);
-  const btn = document.getElementById("imgEditSaveBtn");
-
-  if (!adminPassword) { showToast("Painel bloqueado", "lock"); return; }
-
-  const body = { password: adminPassword, itemId: id, itemType: found ? found.tipo : "" };
-  if (file) {
-    try {
-      body.imageBase64 = await fileToDataUrl(file);
-      body.filename = file.name;
-    } catch {
-      showToast("Não foi possível ler o arquivo", "alert-triangle");
-      return;
-    }
-  } else {
-    body.imageUrl = url || null;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Salvando...";
-  try {
-    const resp = await fetch(`${IMAGE_API_URL}/save-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const json = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(json.error || "Falha ao salvar imagem");
-
-    remoteImageOverrides[id] = json.imagem;
-    applyImageOverrides();
-    finishImageSave();
-    showToast("Imagem commitada no GitHub", "github");
-  } catch (err) {
-    showToast(err.message || "Erro ao salvar imagem", "alert-triangle");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Salvar";
-  }
-}
-
-async function removeImageEdit() {
-  const id = document.getElementById("imgEditItemId").value;
-  if (!adminPassword) { showToast("Painel bloqueado", "lock"); return; }
-  const btn = document.getElementById("imgEditRemoveBtn");
-  btn.disabled = true;
-  try {
-    const resp = await fetch(`${IMAGE_API_URL}/remove-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: adminPassword, itemId: id }),
-    });
-    const json = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(json.error || "Falha ao remover imagem");
-
-    delete remoteImageOverrides[id];
-    applyImageOverrides();
-    finishImageSave();
-    showToast("Imagem removida no GitHub", "github");
-  } catch (err) {
-    showToast(err.message || "Erro ao remover imagem", "alert-triangle");
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function finishImageSave() {
-  closeModal("imageEditModal");
-  renderImageManager();
-  if (state.currentPage === "bau") renderBauPage();
-  if (state.currentPage === "forjados") renderForjadosPage();
-  if (state.currentPage === "moldescnc") renderMoldesPage();
-}
-
-/* -------- gate de senha do painel -------- */
-
-async function unlockImageManager(password) {
-  const btn = document.getElementById("imgMgrUnlockBtn");
-  btn.disabled = true;
-  btn.textContent = "Verificando...";
-  try {
-    const resp = await fetch(`${IMAGE_API_URL}/check-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (resp.ok) {
-      adminPassword = password;
-      sessionStorage.setItem("ag_admin_pw", password);
-      document.getElementById("imgMgrLocked").classList.add("hidden");
-      document.getElementById("imgMgrUnlocked").classList.remove("hidden");
-      renderImageManager();
-    } else {
-      showToast("Senha incorreta", "lock");
-    }
-  } catch {
-    showToast("Não foi possível verificar a senha agora", "alert-triangle");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Desbloquear";
-  }
-}
-
-function lockImageManager() {
-  adminPassword = null;
-  sessionStorage.removeItem("ag_admin_pw");
-  document.getElementById("imgMgrPassword").value = "";
-  document.getElementById("imgMgrUnlocked").classList.add("hidden");
-  document.getElementById("imgMgrLocked").classList.remove("hidden");
 }
 
 /* ============================================================== modais === */
@@ -1376,19 +1156,33 @@ function closeModal(id) {
 
 /* ================================================================ init === */
 
+// Carrega assets/image-map.json (mantido pelo painel /admin.html) e aplica
+// o campo "imagem" em cada item do Baú / Peças / Moldes CNC pelo id.
+// Se o arquivo não existir ou não puder ser lido (ex: abrindo via file://),
+// o site continua funcionando normalmente só sem essas imagens extras.
+async function loadImageOverrides() {
+  try {
+    const res = await fetch("assets/image-map.json", { cache: "no-store" });
+    if (!res.ok) return;
+    const map = await res.json();
+    [BAU_ITEMS, PARTS, MOLDES_CNC].forEach((list) => {
+      list.forEach((item) => {
+        if (map[item.id]) item.imagem = map[item.id];
+      });
+    });
+  } catch (err) {
+    console.warn("assets/image-map.json não carregado:", err.message);
+  }
+}
+
 async function init() {
+  await loadImageOverrides();
   refreshIcons();
   loadOrderHistory();
-  await fetchImageOverrides();
-  applyImageOverrides();
   navigateTo("dashboard");
 
-  // Se já tinha desbloqueado o painel de imagens nesta aba, reconecta sem pedir senha de novo
-  const savedPw = sessionStorage.getItem("ag_admin_pw");
-  if (savedPw) unlockImageManager(savedPw);
-
   // Navegação sidebar
-  document.querySelectorAll(".nav-item").forEach((btn) => {
+  document.querySelectorAll(".nav-item[data-page]").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
   });
 
@@ -1534,46 +1328,9 @@ async function init() {
   document.getElementById("resetDataBtn").addEventListener("click", () => {
     if (!confirm("Restaurar todos os dados para os valores originais?")) return;
     bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
-    applyImageOverrides();
     showToast("Dados restaurados com sucesso", "rotate-ccw");
     navigateTo(state.currentPage);
   });
-
-  // Gerenciador de imagens (Configurações)
-  document.getElementById("imgMgrSearch").addEventListener("input", (e) => {
-    imgMgrState.search = e.target.value;
-    renderImageManager();
-  });
-  document.getElementById("imgMgrFilter").addEventListener("change", (e) => {
-    imgMgrState.filter = e.target.value;
-    renderImageManager();
-  });
-  document.getElementById("imgMgrGrid").addEventListener("click", (e) => {
-    const btn = e.target.closest(".img-mgr-edit-btn");
-    if (btn) openImageEditModal(btn.dataset.id);
-  });
-  document.getElementById("imgEditUrl").addEventListener("input", (e) => {
-    if (!document.getElementById("imgEditFile").files[0]) {
-      renderImgEditPreview(e.target.value.trim() || null);
-    }
-  });
-  document.getElementById("imgEditFile").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => renderImgEditPreview(ev.target.result);
-    reader.readAsDataURL(file);
-  });
-  document.getElementById("imgEditSaveBtn").addEventListener("click", saveImageEdit);
-  document.getElementById("imgEditRemoveBtn").addEventListener("click", removeImageEdit);
-  document.getElementById("imgMgrUnlockBtn").addEventListener("click", () => {
-    const pw = document.getElementById("imgMgrPassword").value;
-    if (pw) unlockImageManager(pw);
-  });
-  document.getElementById("imgMgrPassword").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("imgMgrUnlockBtn").click();
-  });
-  document.getElementById("imgMgrLockBtn").addEventListener("click", lockImageManager);
 }
 
 document.addEventListener("DOMContentLoaded", init);
