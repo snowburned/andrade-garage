@@ -357,7 +357,7 @@ function renderBauPage() {
     grid.innerHTML = items.map((item) => {
       const visual = getBauItemVisual(item);
       const pct = Math.min(100, (item.quantidade / maxQty) * 100);
-      const bg = `radial-gradient(circle at 30% 20%, ${hexToRgba(visual.color, 0.3)}, transparent 65%), linear-gradient(160deg, #26282c 0%, #1a1b1e 100%)`;
+      const bg = `radial-gradient(circle at 30% 20%, rgba(124,58,237,0.12), transparent 65%), linear-gradient(160deg, #1c1d21 0%, #131316 100%)`;
       const visualContent = item.imagem
         ? `<img src="${item.imagem}" alt="${item.nome}" class="bau-item-photo" onerror="this.style.display='none';" />`
         : `<i data-lucide="${visual.icon}" class="bau-item-icon"></i>`;
