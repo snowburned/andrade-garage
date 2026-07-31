@@ -484,7 +484,7 @@ function partRowCard(p) {
   const hasForjada = p.materiais.some((m) => m.forjada);
   const imageContent = p.imagem
     ? `<img src="${p.imagem}" alt="${p.nome}" class="part-row-photo" loading="lazy" onerror="this.style.display='none'" />`
-    : `<i data-lucide="${CATEGORY_ICONS[p.categoria] || "wrench"}" class="w-6 h-6 opacity-90"></i>`;
+    : `<i data-lucide="${CATEGORY_ICONS[p.categoria] || "wrench"}" class="w-7 h-7 opacity-90"></i>`;
   return `
   <button type="button" class="part-row-card" onclick="openDetailModal('parte','${p.id}')">
     <div class="part-row-image">
@@ -590,10 +590,13 @@ function getFilteredMoldes() {
 
 function moldeRowCard(m) {
   const { canMake } = checkDirectStock(m.materiais);
+  const imageContent = m.imagem
+    ? `<img src="${m.imagem}" alt="${m.nome}" class="part-row-photo" loading="lazy" onerror="this.style.display='none'" />`
+    : `<i data-lucide="drafting-compass" class="w-6 h-6 opacity-90"></i>`;
   return `
   <button type="button" class="molde-row-card" onclick="openDetailModal('molde','${m.id}')">
     <div class="molde-row-image">
-      <i data-lucide="drafting-compass" class="w-4 h-4 opacity-90"></i>
+      ${imageContent}
       <span class="molde-row-blur"></span>
     </div>
     <div class="molde-row-body">
