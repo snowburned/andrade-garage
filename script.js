@@ -5,8 +5,11 @@
    catálogo de Moldes CNC.
    ========================================================================== */
 
-// Cópia mutável do estoque (para permitir "restaurar dados")
-let bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
+// Cópia mutável do estoque (para permitir "restaurar dados").
+// Importante: essa cópia só é criada DEPOIS que loadImageOverrides() aplica
+// o assets/image-map.json em BAU_ITEMS — senão as imagens do Baú vindas do
+// Admin nunca aparecem, mesmo já estando corretas em BAU_ITEMS.
+let bauItems = [];
 
 // Estado da UI
 const state = {
@@ -1180,6 +1183,7 @@ async function loadImageOverrides() {
 
 async function init() {
   await loadImageOverrides();
+  bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
   refreshIcons();
   loadOrderHistory();
   navigateTo("dashboard");
