@@ -18,7 +18,7 @@ let bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
 // ---------------------------------------------------------------------------
 
 // >>> Troque pela URL do seu projeto na Vercel depois do deploy <<<
-const IMAGE_API_URL = "https://SEU-PROJETO.vercel.app/api";
+const IMAGE_API_URL = "https://andrade-garage-api.vercel.app";
 // Caminho do JSON de overrides, relativo ao index.html (mesmo repositório)
 const OVERRIDES_JSON_PATH = "data/image-overrides.json";
 
