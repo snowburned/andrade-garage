@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — ANDRADE GARAGE</title>
+<link rel="icon" type="image/png" href="assets/logo-ag.png" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          base: "#060607",
+          card: "#131316",
+          border: "#202024",
+          accent: "#7c3aed",
+          accentlight: "#9d5cff",
+        },
+        fontFamily: {
+          sans: ["Inter", "sans-serif"],
+          display: ["'Rajdhani'", "Inter", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+<style>
+  html, body { height: 100%; }
+
+  body {
+    background-color: #060607;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(124,58,237,0.16), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(124,58,237,0.10), transparent 40%),
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: auto, auto, 42px 42px, 42px 42px;
+  }
+
+  .login-card {
+    background: rgba(19, 19, 22, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.08);
+  }
+
+  .field-input {
+    background: #060607;
+    border: 1px solid #202024;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+  }
+
+  .btn-connect {
+    background: #7c3aed;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .btn-connect:hover { background: #9d5cff; }
+  .btn-connect:active { transform: scale(0.98); }
+  .btn-connect:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .kicker {
+    letter-spacing: 0.18em;
+  }
+</style>
+</head>
+<body class="text-gray-200 font-sans antialiased min-h-screen flex items-center justify-center px-4">
+
+  <div class="login-card w-full max-w-sm rounded-2xl border border-border px-8 py-10">
+
+    <div class="flex flex-col items-center text-center mb-8">
+      <img src="assets/logo-ag.png" alt="Andrade Garage" class="w-16 h-16 rounded-xl mb-4" />
+      <h1 class="font-display text-2xl font-bold tracking-wide text-white">ANDRADE GARAGE</h1>
+      <p class="kicker text-[11px] text-accentlight/80 uppercase mt-1">Acesso ao sistema</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4" autocomplete="off">
+      <div>
+        <label for="username" class="block text-xs kicker uppercase text-gray-500 mb-1.5">Usuário</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          autocomplete="username"
+          class="field-input w-full rounded-lg px-4 py-2.5 text-sm text-white"
+          placeholder="seu usuário"
+        />
+      </div>
+
+      <div>
+        <label for="password" class="block text-xs kicker uppercase text-gray-500 mb-1.5">Senha</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="current-password"
+          class="field-input w-full rounded-lg px-4 py-2.5 text-sm text-white"
+          placeholder="••••••••"
+        />
+      </div>
+
+      <p id="loginError" class="hidden text-xs text-red-400 pt-1"></p>
+
+      <button
+        id="loginBtn"
+        type="submit"
+        class="btn-connect w-full text-white text-sm font-semibold py-3 rounded-lg mt-2 font-display tracking-wide"
+      >
+        CONECTAR
+      </button>
+    </form>
+
+    <p class="text-center text-[11px] text-gray-600 mt-8">
+      Acesso restrito. Fale com o administrador se precisar de um login.
+    </p>
+  </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const errorEl = document.getElementById("loginError");
+    const btn = document.getElementById("loginBtn");
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove("hidden");
+    }
+
+    // Se já existe uma sessão válida, pula direto para o painel.
+    (async function checkExistingSession() {
+      try {
+        const res = await fetch("/api/me", { credentials: "include" });
+        if (res.ok) window.location.replace("index.html");
+      } catch {
+        // sem backend/rede: apenas deixa o usuário na tela de login
+      }
+    })();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "CONECTANDO...";
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          showError(data.error || "Usuário ou senha inválidos.");
+          btn.disabled = false;
+          btn.textContent = "CONECTAR";
+          return;
+        }
+
+        window.location.replace("index.html");
+      } catch (err) {
+        showError("Não foi possível conectar ao servidor. Tente novamente.");
+        btn.disabled = false;
+        btn.textContent = "CONECTAR";
+      }
+    });
+  </script>
+</body>
+</html>

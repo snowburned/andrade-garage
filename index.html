@@ -42,6 +42,7 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
 <link rel="stylesheet" href="style.css" />
+<script src="auth-guard.js"></script>
 </head>
 <body class="bg-base text-gray-200 font-sans antialiased overflow-x-hidden">
 
@@ -136,6 +137,9 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             Sistema online
           </span>
+          <button id="logoutBtn" title="Sair" class="w-9 h-9 flex items-center justify-center rounded-lg bg-card border border-border text-gray-300 hover:text-white hover:border-accent transition-colors">
+            <i data-lucide="log-out" class="w-[16px] h-[16px]"></i>
+          </button>
         </div>
       </header>
 

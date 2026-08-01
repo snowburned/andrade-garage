@@ -6,14 +6,11 @@
    assets/image-map.json — o site principal (script.js) lê esse arquivo
    e aplica as imagens automaticamente.
 
-   TROCAR A SENHA: edite a linha ADMIN_PASSWORD abaixo. Isso é só uma
-   trava simples pra não aparecer pra qualquer visitante — não é segurança
-   de verdade (o código fica visível pra quem souber procurar). Quem
-   realmente protege as coisas é o seu Token do GitHub, que fica só no
-   seu navegador e nunca é publicado em lugar nenhum.
+   O acesso a esta página agora é protegido pelo login do site inteiro
+   (auth-guard.js + /api/me, com usuários guardados no Neon). Quem protege
+   os arquivos de verdade continua sendo o seu Token do GitHub, que fica só
+   no seu navegador e nunca é publicado em lugar nenhum.
    ========================================================================== */
-
-const ADMIN_PASSWORD = "andrade2026";
 
 const GH_OWNER = "snowburned";
 const GH_REPO = "andrade-garage";
@@ -21,7 +18,6 @@ const GH_BRANCH = "main";
 const IMAGE_MAP_PATH = "assets/image-map.json";
 const MAX_IMAGE_DIM = 900;
 const TOKEN_STORAGE_KEY = "ag_gh_token";
-const UNLOCK_STORAGE_KEY = "ag_admin_unlocked";
 
 const TABS = {
   bau: { label: "Baú", folder: "assets/bau", items: () => BAU_ITEMS, iconFor: (item) => "package" },
@@ -36,6 +32,8 @@ let activeTab = "bau";
 let searchQuery = "";
 let cardStatus = {}; // id -> "saving" | "saved" | "error"
 let cardErrors = {}; // id -> mensagem de erro
+let currentUserId = null;
+let currentUsername = null;
 
 /* ----------------------------- Utilidades ------------------------------ */
 
@@ -56,26 +54,6 @@ function toast(msg, type = "info") {
   el.className = `toast toast-${type} show`;
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.remove("show"), 4000);
-}
-
-/* --------------------------- Senha de acesso ---------------------------- */
-
-function checkUnlocked() {
-  return sessionStorage.getItem(UNLOCK_STORAGE_KEY) === "1";
-}
-
-function tryUnlock() {
-  const input = document.getElementById("pwInput");
-  const err = document.getElementById("pwError");
-  if (input.value === ADMIN_PASSWORD) {
-    sessionStorage.setItem(UNLOCK_STORAGE_KEY, "1");
-    err.classList.add("hidden");
-    startApp();
-  } else {
-    err.classList.remove("hidden");
-    input.value = "";
-    input.focus();
-  }
 }
 
 /* ------------------------------ GitHub API ------------------------------ */
@@ -276,12 +254,175 @@ function rawUrl(path) {
   return `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${path}?t=${Date.now()}`;
 }
 
+/* --------------------------- Gestão de usuários -------------------------- */
+
+async function loadSessionInfo() {
+  try {
+    const res = await fetch("/api/me", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      currentUserId = data.id;
+      currentUsername = data.username;
+    }
+  } catch {
+    /* auth-guard.js já cuida do redirect se a sessão cair */
+  }
+}
+
+async function loadUsers() {
+  const list = document.getElementById("usersList");
+  list.innerHTML = `<p class="text-sm text-gray-500 py-4">Carregando...</p>`;
+  try {
+    const res = await fetch("/api/users", { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      list.innerHTML = `<p class="text-sm text-red-400 py-4">${data.error || "Erro ao carregar usuários."}</p>`;
+      return;
+    }
+    renderUsersList(data.users || []);
+  } catch {
+    list.innerHTML = `<p class="text-sm text-red-400 py-4">Erro ao carregar usuários.</p>`;
+  }
+}
+
+function renderUsersList(users) {
+  const list = document.getElementById("usersList");
+  if (!users.length) {
+    list.innerHTML = `<p class="text-sm text-gray-500 py-4">Nenhum usuário cadastrado.</p>`;
+    return;
+  }
+
+  list.innerHTML = users.map((u) => {
+    const isSelf = u.id === currentUserId;
+    const created = new Date(u.created_at).toLocaleDateString("pt-BR");
+    return `
+    <div class="flex items-center justify-between gap-3 border border-border rounded-lg px-4 py-3 bg-card">
+      <div>
+        <p class="text-sm font-semibold text-white">${u.username}${isSelf ? ' <span class="text-xs text-accentlight">(você)</span>' : ""}</p>
+        <p class="text-xs text-gray-500">Criado em ${created}</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button class="icon-btn" title="Trocar senha" onclick="resetUserPassword(${u.id}, '${u.username}')"><i data-lucide="key-round" class="w-3.5 h-3.5"></i></button>
+        <button class="icon-btn" title="Excluir" ${isSelf ? "disabled" : ""} onclick="deleteUser(${u.id}, '${u.username}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+      </div>
+    </div>`;
+  }).join("");
+
+  refreshIcons();
+}
+
+async function createUser(e) {
+  e.preventDefault();
+
+  const usernameInput = document.getElementById("newUsername");
+  const passwordInput = document.getElementById("newPassword");
+  const confirmInput = document.getElementById("newPasswordConfirm");
+  const errorEl = document.getElementById("createUserError");
+  errorEl.classList.add("hidden");
+
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  const confirm = confirmInput.value;
+
+  if (password !== confirm) {
+    errorEl.textContent = "As senhas não coincidem.";
+    errorEl.classList.remove("hidden");
+    return;
+  }
+
+  const btn = document.getElementById("createUserBtn");
+  btn.disabled = true;
+  btn.textContent = "Criando...";
+
+  try {
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      errorEl.textContent = data.error || "Erro ao criar usuário.";
+      errorEl.classList.remove("hidden");
+      return;
+    }
+
+    usernameInput.value = "";
+    passwordInput.value = "";
+    confirmInput.value = "";
+    toast(`Usuário "${data.user.username}" criado.`, "success");
+    loadUsers();
+  } catch {
+    errorEl.textContent = "Erro ao criar usuário. Tente novamente.";
+    errorEl.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Criar usuário";
+  }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Excluir o usuário "${username}"? Essa ação não pode ser desfeita.`)) return;
+
+  try {
+    const res = await fetch(`/api/users?id=${id}`, { method: "DELETE", credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast(data.error || "Erro ao excluir usuário.", "error");
+      return;
+    }
+    toast(`Usuário "${username}" excluído.`, "success");
+    loadUsers();
+  } catch {
+    toast("Erro ao excluir usuário.", "error");
+  }
+}
+
+async function resetUserPassword(id, username) {
+  const newPassword = prompt(`Nova senha para "${username}" (mínimo 8 caracteres):`);
+  if (!newPassword) return;
+  if (newPassword.length < 8) {
+    toast("A senha precisa ter pelo menos 8 caracteres.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/users", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id, password: newPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast(data.error || "Erro ao trocar senha.", "error");
+      return;
+    }
+    toast(`Senha de "${username}" atualizada.`, "success");
+  } catch {
+    toast("Erro ao trocar senha.", "error");
+  }
+}
+
 /* -------------------------------- Render --------------------------------- */
 
 function setTab(tab) {
   activeTab = tab;
   document.querySelectorAll(".admin-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
-  renderGrid();
+
+  const isUsersTab = tab === "usuarios";
+  document.getElementById("imagesPanel").classList.toggle("hidden", isUsersTab);
+  document.getElementById("imagesSearchWrap").classList.toggle("hidden", isUsersTab);
+  document.getElementById("adminCount").classList.toggle("hidden", isUsersTab);
+  document.getElementById("usersPanel").classList.toggle("hidden", !isUsersTab);
+
+  if (isUsersTab) {
+    loadUsers();
+  } else {
+    renderGrid();
+  }
 }
 
 function statusBadge(id) {
@@ -294,6 +435,7 @@ function statusBadge(id) {
 
 function renderGrid() {
   const tab = TABS[activeTab];
+  if (!tab) return;
   const grid = document.getElementById("adminGrid");
   const items = tab.items().filter((it) => it.nome.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -357,8 +499,6 @@ function attachDropHandlers() {
 /* -------------------------------- Início ---------------------------------- */
 
 function startApp() {
-  document.getElementById("lockScreen").classList.add("hidden");
-  document.getElementById("appScreen").classList.remove("hidden");
   updateTokenStatus();
   refreshIcons();
   if (ghToken) refreshMapFromGithub();
@@ -368,9 +508,6 @@ function startApp() {
 document.addEventListener("DOMContentLoaded", () => {
   refreshIcons();
 
-  document.getElementById("pwSubmit").addEventListener("click", tryUnlock);
-  document.getElementById("pwInput").addEventListener("keydown", (e) => { if (e.key === "Enter") tryUnlock(); });
-
   document.querySelectorAll(".admin-tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
   document.getElementById("adminSearch").addEventListener("input", (e) => { searchQuery = e.target.value; renderGrid(); });
 
@@ -379,10 +516,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("tokenCloseBtn").addEventListener("click", closeTokenPanel);
   document.getElementById("openTokenBtn").addEventListener("click", openTokenPanel);
   document.getElementById("refreshBtn").addEventListener("click", () => { toast("Sincronizando com o GitHub..."); refreshMapFromGithub(); });
+  document.getElementById("createUserForm").addEventListener("submit", createUser);
 
-  if (checkUnlocked()) {
-    startApp();
-  } else {
-    document.getElementById("pwInput").focus();
-  }
+  loadSessionInfo();
+  startApp();
 });

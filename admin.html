@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin de Imagens — ANDRADE GARAGE</title>
+<title>Admin — ANDRADE GARAGE</title>
 <link rel="icon" type="image/png" href="assets/logo-ag.png" />
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -35,34 +35,19 @@
 
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="admin.css" />
+<script src="auth-guard.js"></script>
 </head>
 <body class="bg-base text-gray-200 font-sans antialiased overflow-x-hidden">
 
-  <!-- ============================= TELA DE SENHA ============================= -->
-  <div id="lockScreen" class="min-h-screen flex items-center justify-center px-4">
-    <div class="w-full max-w-sm bg-card border border-border rounded-2xl p-8 text-center">
-      <img src="assets/logo-ag.png" alt="Andrade Garage" class="w-14 h-14 mx-auto mb-4 rounded-lg" />
-      <h1 class="text-lg font-bold text-white mb-1 font-display tracking-wide">ADMIN DE IMAGENS</h1>
-      <p class="text-sm text-gray-500 mb-6">Acesso restrito. Digite a senha.</p>
-      <input id="pwInput" type="password" placeholder="Senha" autocomplete="off"
-        class="w-full bg-base border border-border rounded-lg px-4 py-2.5 text-sm text-white mb-3 outline-none focus:border-accent transition-colors" />
-      <p id="pwError" class="hidden text-xs text-red-400 mb-3">Senha incorreta.</p>
-      <button id="pwSubmit" class="w-full bg-accent hover:bg-accentlight transition-colors text-white text-sm font-semibold py-2.5 rounded-lg">
-        Entrar
-      </button>
-      <a href="index.html" class="block mt-5 text-xs text-gray-600 hover:text-gray-400 transition-colors">← Voltar para o painel</a>
-    </div>
-  </div>
-
   <!-- ============================= APP ============================= -->
-  <div id="appScreen" class="hidden min-h-screen">
+  <div id="appScreen" class="min-h-screen">
     <header class="sticky top-0 z-30 border-b border-border bg-sidebar/85 backdrop-blur">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
         <div class="flex items-center gap-3">
           <img src="assets/logo-ag.png" alt="" class="w-9 h-9 rounded-lg" />
           <div>
-            <h1 class="text-base font-bold text-white font-display tracking-wide leading-tight">ADMIN DE IMAGENS</h1>
-            <p class="text-xs text-gray-500 leading-tight">ANDRADE GARAGE · snowburned/andrade-garage</p>
+            <h1 class="text-base font-bold text-white font-display tracking-wide leading-tight">ADMIN</h1>
+            <p class="text-xs text-gray-500 leading-tight">ANDRADE GARAGE · imagens & usuários</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -70,6 +55,7 @@
           <button id="refreshBtn" class="icon-btn" title="Sincronizar com o GitHub"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
           <button id="openTokenBtn" class="icon-btn" title="Configurar token"><i data-lucide="key-round" class="w-3.5 h-3.5"></i></button>
           <a href="index.html" class="icon-btn" title="Voltar ao painel"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i></a>
+          <button id="logoutBtn" class="icon-btn" title="Sair"><i data-lucide="log-out" class="w-3.5 h-3.5"></i></button>
         </div>
       </div>
     </header>
@@ -82,8 +68,9 @@
           <button class="admin-tab active" data-tab="bau">Baú</button>
           <button class="admin-tab" data-tab="parts">Peças</button>
           <button class="admin-tab" data-tab="moldes">Moldes CNC</button>
+          <button class="admin-tab" data-tab="usuarios">Usuários</button>
         </div>
-        <div class="relative flex-1 min-w-[200px]">
+        <div id="imagesSearchWrap" class="relative flex-1 min-w-[200px]">
           <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
           <input id="adminSearch" type="text" placeholder="Buscar item..."
             class="w-full bg-card border border-border rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-accent transition-colors" />
@@ -91,12 +78,56 @@
         <span id="adminCount" class="text-xs text-gray-500 shrink-0"></span>
       </div>
 
-      <p class="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
-        <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
-        Clique num card ou arraste uma imagem em cima dele. Ela é redimensionada, salva direto no GitHub e aparece no site depois que a Vercel terminar o deploy automático (geralmente 10-40s).
-      </p>
+      <!-- ==================== ABA: IMAGENS (Baú / Peças / Moldes) ==================== -->
+      <div id="imagesPanel">
+        <p class="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+          Clique num card ou arraste uma imagem em cima dele. Ela é redimensionada, salva direto no GitHub e aparece no site depois que a Vercel terminar o deploy automático (geralmente 10-40s).
+        </p>
 
-      <div id="adminGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        <div id="adminGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+      </div>
+
+      <!-- ==================== ABA: USUÁRIOS ==================== -->
+      <div id="usersPanel" class="hidden">
+        <p class="text-xs text-gray-500 mb-5 flex items-center gap-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+          Só quem já está logado consegue criar usuários por aqui — não existe cadastro público em lugar nenhum do site.
+        </p>
+
+        <div class="grid md:grid-cols-[320px_1fr] gap-6 items-start">
+          <form id="createUserForm" class="bg-card border border-border rounded-xl p-5 space-y-3">
+            <h2 class="text-sm font-bold text-white mb-1">Novo usuário</h2>
+
+            <div>
+              <label for="newUsername" class="block text-xs text-gray-500 mb-1.5">Usuário</label>
+              <input id="newUsername" type="text" required autocomplete="off" placeholder="ex: joao"
+                class="w-full bg-base border border-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-accent transition-colors" />
+            </div>
+
+            <div>
+              <label for="newPassword" class="block text-xs text-gray-500 mb-1.5">Senha</label>
+              <input id="newPassword" type="password" required autocomplete="new-password" placeholder="mínimo 8 caracteres"
+                class="w-full bg-base border border-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-accent transition-colors" />
+            </div>
+
+            <div>
+              <label for="newPasswordConfirm" class="block text-xs text-gray-500 mb-1.5">Confirmar senha</label>
+              <input id="newPasswordConfirm" type="password" required autocomplete="new-password" placeholder="repita a senha"
+                class="w-full bg-base border border-border rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-accent transition-colors" />
+            </div>
+
+            <p id="createUserError" class="hidden text-xs text-red-400"></p>
+
+            <button id="createUserBtn" type="submit"
+              class="w-full bg-accent hover:bg-accentlight transition-colors text-white text-sm font-semibold py-2.5 rounded-lg">
+              Criar usuário
+            </button>
+          </form>
+
+          <div id="usersList" class="space-y-2"></div>
+        </div>
+      </div>
     </main>
   </div>
 
