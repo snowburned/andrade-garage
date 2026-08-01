@@ -973,3 +973,22 @@ select:focus-visible,
 @media (max-width: 1023px) {
   .sidebar { top: 0; left: 0; box-shadow: 20px 0 60px rgba(0,0,0,0.5); }
 }
+
+/* ===================== Perfil / usuário na sidebar ===================== */
+
+.avatar-hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.avatar-hover-scale:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35);
+}
+
+@keyframes menuPop {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-menu-pop {
+  animation: menuPop 0.15s ease-out;
+  transform-origin: bottom right;
+}

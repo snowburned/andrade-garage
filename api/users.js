@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
   if (req.method === "GET") {
     try {
       const result = await pool.query(
-        "SELECT id, username, created_at FROM users ORDER BY created_at ASC"
+        "SELECT id, username, display_name, role, created_at FROM users ORDER BY created_at ASC"
       );
       res.status(200).json({ users: result.rows });
     } catch (err) {
@@ -62,6 +62,7 @@ module.exports = async (req, res) => {
     const body = parseBody(req);
     const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
+    const role = typeof body.role === "string" && body.role.trim() ? body.role.trim().slice(0, 30) : null;
 
     if (!username || !password) {
       res.status(400).json({ error: "Usuário e senha são obrigatórios." });
@@ -81,8 +82,8 @@ module.exports = async (req, res) => {
     try {
       const hash = await bcrypt.hash(password, 10);
       const result = await pool.query(
-        "INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at",
-        [username, hash]
+        "INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, username, role, created_at",
+        [username, hash, role]
       );
       res.status(201).json({ user: result.rows[0] });
     } catch (err) {
@@ -96,35 +97,51 @@ module.exports = async (req, res) => {
     return;
   }
 
-  /* -------------------------- Trocar senha (PUT) --------------------------- */
+  /* --------------------- Trocar senha e/ou cargo (PUT) --------------------- */
   if (req.method === "PUT") {
     const body = parseBody(req);
     const id = Number(body.id);
-    const password = typeof body.password === "string" ? body.password : "";
+    const hasPassword = typeof body.password === "string" && body.password.length > 0;
+    const hasRole = "role" in body;
 
-    if (!id || !password) {
-      res.status(400).json({ error: "Usuário e nova senha são obrigatórios." });
+    if (!id || (!hasPassword && !hasRole)) {
+      res.status(400).json({ error: "Nada para atualizar." });
       return;
     }
-    if (password.length < 8) {
+    if (hasPassword && body.password.length < 8) {
       res.status(400).json({ error: "A senha precisa ter pelo menos 8 caracteres." });
       return;
     }
 
+    const fields = [];
+    const values = [];
+    let i = 1;
+
+    if (hasPassword) {
+      const hash = await bcrypt.hash(body.password, 10);
+      fields.push(`password_hash = $${i++}`);
+      values.push(hash);
+    }
+    if (hasRole) {
+      const role = typeof body.role === "string" && body.role.trim() ? body.role.trim().slice(0, 30) : null;
+      fields.push(`role = $${i++}`);
+      values.push(role);
+    }
+    values.push(id);
+
     try {
-      const hash = await bcrypt.hash(password, 10);
       const result = await pool.query(
-        "UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id, username",
-        [hash, id]
+        `UPDATE users SET ${fields.join(", ")} WHERE id = $${i} RETURNING id, username, role`,
+        values
       );
       if (!result.rows.length) {
         res.status(404).json({ error: "Usuário não encontrado." });
         return;
       }
-      res.status(200).json({ ok: true });
+      res.status(200).json({ user: result.rows[0] });
     } catch (err) {
-      console.error("Erro ao trocar senha:", err);
-      res.status(500).json({ error: "Erro ao trocar senha." });
+      console.error("Erro ao atualizar usuário:", err);
+      res.status(500).json({ error: "Erro ao atualizar usuário." });
     }
     return;
   }

@@ -24,6 +24,7 @@ const state = {
   forgeQty: 1, // quantidade selecionada para "Forjar com 1 clique" no modal de detalhes
   editingItemId: null,
   detailStack: [], // pilha de navegação do modal de detalhes { type: 'parte'|'molde', id }
+  profile: null, // { id, username, displayName, avatarData, role } — vem de /api/me
 };
 
 const PAGE_META = {
@@ -33,6 +34,7 @@ const PAGE_META = {
   moldescnc: { title: "Moldes CNC", subtitle: "Peças brutas usinadas, usadas como base para forjar componentes" },
   loja: { title: "Peças LOJA", subtitle: "Peças compradas prontas de fornecedores externos — não são fabricadas na oficina" },
   configuracoes: { title: "Configurações", subtitle: "Preferências do sistema" },
+  perfil: { title: "Perfil", subtitle: "Suas informações de conta" },
 };
 
 /* ============================================================ helpers === */
@@ -178,6 +180,7 @@ function navigateTo(page) {
   if (page === "moldescnc") renderMoldesPage();
   if (page === "loja") renderLojaPage();
   if (page === "configuracoes") renderConfiguracoes();
+  if (page === "perfil") renderPerfilPage();
 }
 
 function closeMobileSidebar() {
@@ -1147,6 +1150,225 @@ function renderConfiguracoes() {
   document.getElementById("cfgTotalReceitas").textContent = PARTS.length;
 }
 
+/* ============================================================== perfil === */
+
+// Pega as iniciais de um nome pra usar como avatar padrão (ex: "João Pedro" → "JP").
+function getInitials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join("");
+}
+
+// Aplica o perfil (nome/foto/cargo) no rodapé da sidebar. Chamado assim que
+// auth-guard.js termina de buscar /api/me, e de novo depois de salvar
+// mudanças em Perfil — sem precisar recarregar a página.
+function applyProfileToSidebar(profile) {
+  if (!profile) return;
+  state.profile = profile;
+
+  const name = profile.displayName || profile.username;
+  const nameEl = document.getElementById("sidebarUserName");
+  const roleEl = document.getElementById("sidebarUserRole");
+  const initialsEl = document.getElementById("sidebarUserInitials");
+  const imgEl = document.getElementById("sidebarUserAvatarImg");
+
+  if (nameEl) nameEl.textContent = name;
+  if (roleEl) roleEl.textContent = profile.role || "ANDRADE GARAGE";
+
+  if (profile.avatarData) {
+    if (imgEl) { imgEl.src = profile.avatarData; imgEl.classList.remove("hidden"); }
+    if (initialsEl) initialsEl.classList.add("hidden");
+  } else {
+    if (imgEl) imgEl.classList.add("hidden");
+    if (initialsEl) { initialsEl.textContent = getInitials(name); initialsEl.classList.remove("hidden"); }
+  }
+}
+
+// Liga o menu (⋮) do rodapé da sidebar: abrir/fechar, "Meu perfil" e "Deslogar".
+function initSidebarUser() {
+  // Se o perfil já chegou antes desse ponto (auth-guard.js roda antes de
+  // script.js terminar de carregar), aplica na hora. Senão, escuta o evento.
+  if (window.AG_PROFILE) applyProfileToSidebar(window.AG_PROFILE);
+  window.addEventListener("ag:profile-loaded", (e) => applyProfileToSidebar(e.detail));
+
+  const row = document.getElementById("sidebarUserRow");
+  const menuBtn = document.getElementById("sidebarUserMenuBtn");
+  const menu = document.getElementById("sidebarUserMenu");
+  const profileBtn = document.getElementById("sidebarProfileBtn");
+  const logoutBtn = document.getElementById("sidebarLogoutBtn");
+  if (!row || !menuBtn || !menu) return;
+
+  row.addEventListener("click", () => navigateTo("perfil"));
+
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("hidden");
+  });
+
+  profileBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.add("hidden");
+    navigateTo("perfil");
+  });
+
+  logoutBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (window.AG_logout) window.AG_logout();
+  });
+
+  document.addEventListener("click", () => menu.classList.add("hidden"));
+}
+
+// Estado local (não salvo ainda) da troca de avatar na página Perfil.
+let pendingAvatarData = null;
+let avatarWasRemoved = false;
+
+function renderPerfilPage() {
+  const p = state.profile || window.AG_PROFILE;
+  if (!p) return;
+
+  pendingAvatarData = null;
+  avatarWasRemoved = false;
+
+  document.getElementById("profileUsernameLabel").textContent = "@" + p.username;
+  document.getElementById("profileDisplayName").value = p.displayName === p.username ? "" : (p.displayName || "");
+  document.getElementById("profileError").classList.add("hidden");
+  document.getElementById("profileSuccess").classList.add("hidden");
+
+  const imgEl = document.getElementById("profileAvatarImg");
+  const initEl = document.getElementById("profileAvatarInitials");
+  const removeBtn = document.getElementById("profileRemoveAvatarBtn");
+
+  if (p.avatarData) {
+    imgEl.src = p.avatarData;
+    imgEl.classList.remove("hidden");
+    initEl.classList.add("hidden");
+    removeBtn.classList.remove("hidden");
+  } else {
+    imgEl.classList.add("hidden");
+    initEl.textContent = getInitials(p.displayName || p.username);
+    initEl.classList.remove("hidden");
+    removeBtn.classList.add("hidden");
+  }
+}
+
+// Redimensiona/recorta a foto escolhida em um quadrado 256x256 (JPEG),
+// pra não guardar imagens gigantes no banco.
+function readAndResizeAvatar(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+      img.onload = () => {
+        const SIZE = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function initProfilePage() {
+  const fileInput = document.getElementById("avatarFileInput");
+  const removeBtn = document.getElementById("profileRemoveAvatarBtn");
+  const saveBtn = document.getElementById("profileSaveBtn");
+  if (!fileInput || !saveBtn) return;
+
+  fileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showToast("Escolha um arquivo de imagem válido.", "alert-circle");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showToast("Imagem muito grande. Escolha um arquivo de até 8MB.", "alert-circle");
+      return;
+    }
+
+    try {
+      const dataUrl = await readAndResizeAvatar(file);
+      pendingAvatarData = dataUrl;
+      avatarWasRemoved = false;
+
+      const imgEl = document.getElementById("profileAvatarImg");
+      imgEl.src = dataUrl;
+      imgEl.classList.remove("hidden");
+      document.getElementById("profileAvatarInitials").classList.add("hidden");
+      document.getElementById("profileRemoveAvatarBtn").classList.remove("hidden");
+    } catch (err) {
+      showToast(err.message || "Erro ao processar a imagem.", "alert-circle");
+    }
+  });
+
+  removeBtn?.addEventListener("click", () => {
+    pendingAvatarData = null;
+    avatarWasRemoved = true;
+    document.getElementById("profileAvatarImg").classList.add("hidden");
+    document.getElementById("profileAvatarInitials").classList.remove("hidden");
+    removeBtn.classList.add("hidden");
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    const errorEl = document.getElementById("profileError");
+    const successEl = document.getElementById("profileSuccess");
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+
+    const displayName = document.getElementById("profileDisplayName").value.trim();
+    const payload = { displayName };
+    if (avatarWasRemoved) payload.avatarData = null;
+    else if (pendingAvatarData) payload.avatarData = pendingAvatarData;
+
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Salvando...";
+
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        errorEl.textContent = data.error || "Erro ao salvar as alterações.";
+        errorEl.classList.remove("hidden");
+        return;
+      }
+
+      applyProfileToSidebar(data.profile);
+      window.AG_PROFILE = data.profile;
+      renderPerfilPage();
+      successEl.textContent = "Alterações salvas.";
+      successEl.classList.remove("hidden");
+      showToast("Perfil atualizado.");
+    } catch (err) {
+      errorEl.textContent = "Erro ao salvar. Verifique sua conexão e tente de novo.";
+      errorEl.classList.remove("hidden");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+}
+
 /* ============================================================== modais === */
 
 function openModal(id) {
@@ -1192,6 +1414,10 @@ async function init() {
   document.querySelectorAll(".nav-item[data-page]").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
   });
+
+  // Rodapé sidebar: usuário logado (nome/foto/cargo) + menu (Perfil / Deslogar)
+  initSidebarUser();
+  initProfilePage();
 
   // Sidebar recolhível (desktop) — lembra a preferência do usuário
   const sidebarEl = document.getElementById("sidebar");

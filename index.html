@@ -97,6 +97,11 @@
           <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
           <span class="nav-label">Configurações</span>
         </button>
+        <button data-page="perfil" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
+          <span class="nav-bar"></span>
+          <i data-lucide="user-circle" class="w-[18px] h-[18px] shrink-0"></i>
+          <span class="nav-label">Perfil</span>
+        </button>
         <a href="admin.html" target="_blank" rel="noopener" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative">
           <span class="nav-bar"></span>
           <i data-lucide="image-plus" class="w-[18px] h-[18px] shrink-0"></i>
@@ -105,12 +110,28 @@
       </nav>
 
       <!-- Rodapé sidebar / usuário -->
-      <div class="px-3 py-3 border-t border-border shrink-0">
-        <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-accentlight flex items-center justify-center text-sm font-bold shrink-0">MA</div>
-          <div class="nav-label leading-tight overflow-hidden">
-            <p class="text-sm font-semibold text-white truncate">Mecânico Chefe</p>
-            <p class="text-xs text-gray-500 truncate">ANDRADE GARAGE</p>
+      <div class="px-3 py-3 border-t border-border shrink-0 relative">
+        <div id="sidebarUserRow" class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+          <div id="sidebarUserAvatarWrap" class="avatar-hover-scale w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-accent to-accentlight flex items-center justify-center text-sm font-bold shrink-0">
+            <span id="sidebarUserInitials">··</span>
+            <img id="sidebarUserAvatarImg" src="" alt="" class="hidden w-full h-full object-cover" />
+          </div>
+          <div class="nav-label leading-tight overflow-hidden flex-1 min-w-0">
+            <p id="sidebarUserName" class="text-sm font-semibold text-white truncate">Carregando...</p>
+            <p id="sidebarUserRole" class="text-xs text-gray-500 truncate">ANDRADE GARAGE</p>
+          </div>
+          <div class="nav-label relative shrink-0">
+            <button id="sidebarUserMenuBtn" class="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 hover:text-white hover:bg-white/10 transition-colors duration-200" title="Menu do usuário">
+              <i data-lucide="more-vertical" class="w-4 h-4"></i>
+            </button>
+            <div id="sidebarUserMenu" class="hidden absolute bottom-full right-0 mb-2 w-44 bg-card border border-border rounded-lg shadow-2xl overflow-hidden z-50 animate-menu-pop">
+              <button id="sidebarProfileBtn" class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-150 text-left">
+                <i data-lucide="user-circle" class="w-4 h-4"></i> Meu perfil
+              </button>
+              <button id="sidebarLogoutBtn" class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors duration-150 text-left border-t border-border">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Deslogar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -411,6 +432,48 @@
             <button id="resetDataBtn" class="btn-secondary">
               <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
               Restaurar dados originais
+            </button>
+          </div>
+        </section>
+
+        <!-- ==================== PÁGINA: PERFIL ==================== -->
+        <section id="page-perfil" class="page-section hidden space-y-6">
+          <div class="card-panel">
+            <h3 class="flex items-center gap-2 text-white font-semibold mb-1">
+              <i data-lucide="user-circle" class="w-[18px] h-[18px] text-accentlight"></i>
+              Meu perfil
+            </h3>
+            <p class="text-sm text-gray-500 mb-6">Essas informações aparecem no rodapé do menu lateral, só pra você.</p>
+
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5 mb-7">
+              <div class="relative shrink-0">
+                <div id="profileAvatarPreviewWrap" class="avatar-hover-scale w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-accent to-accentlight flex items-center justify-center text-xl font-bold border-2 border-border">
+                  <span id="profileAvatarInitials">··</span>
+                  <img id="profileAvatarImg" src="" alt="" class="hidden w-full h-full object-cover" />
+                </div>
+                <label for="avatarFileInput" class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent hover:bg-accentlight transition-colors duration-200 flex items-center justify-center cursor-pointer border-2 border-sidebar" title="Trocar foto">
+                  <i data-lucide="camera" class="w-3.5 h-3.5 text-white"></i>
+                </label>
+                <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p id="profileUsernameLabel" class="text-sm text-white font-medium">@usuario</p>
+                <p class="text-xs text-gray-500 mt-1">Clique no ícone da câmera pra trocar sua foto. A imagem é recortada em círculo e redimensionada automaticamente.</p>
+                <button id="profileRemoveAvatarBtn" class="hidden text-xs text-red-400 hover:text-red-300 transition-colors duration-150 mt-2">Remover foto</button>
+              </div>
+            </div>
+
+            <div class="max-w-sm space-y-2 mb-3">
+              <label for="profileDisplayName" class="block text-xs text-gray-500 mb-1.5">Nome de exibição</label>
+              <input id="profileDisplayName" type="text" maxlength="40" placeholder="Como quer aparecer no sistema"
+                class="w-full bg-base border border-border rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-accent transition-colors duration-150" />
+            </div>
+
+            <p id="profileError" class="hidden text-xs text-red-400 mb-2"></p>
+            <p id="profileSuccess" class="hidden text-xs text-emerald-400 mb-2"></p>
+
+            <button id="profileSaveBtn" class="bg-accent hover:bg-accentlight transition-colors duration-200 text-white text-sm font-semibold px-5 py-2.5 rounded-lg">
+              Salvar alterações
             </button>
           </div>
         </section>

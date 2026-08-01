@@ -53,6 +53,13 @@ sql/
   `login.html`.
 - A aba Usuários não deixa você excluir o seu próprio login nem apagar o
   último usuário do sistema, pra evitar ficar trancado pra fora.
+- Cada usuário tem uma página **Perfil** (no menu lateral, e clicando no
+  próprio nome no rodapé da sidebar) onde pode trocar o nome de exibição e
+  a foto — fica salvo no banco, então continua igual mesmo fechando o
+  navegador ou trocando de aparelho.
+- O **cargo** (ex: "Administrador", "Mecânico") só é definido pelo admin,
+  na aba Usuários de `admin.html` — de propósito, pra ninguém conseguir se
+  auto-promover.
 
 ## Passo a passo — configurar o banco (Neon)
 
@@ -60,7 +67,13 @@ sql/
 2. No painel do projeto, clique em **Connect** e copie a **connection
    string** (algo como `postgresql://usuario:senha@ep-xxxx.neon.tech/neondb?sslmode=require`).
 3. Abra o **SQL Editor** da Neon e rode o conteúdo do arquivo
-   `sql/schema.sql` (cria a tabela `users`).
+   `sql/schema.sql` (cria a tabela `users`, com as colunas de perfil:
+   `display_name`, `avatar_data` e `role`).
+
+> **Já tinha criado o banco antes?** Se você já rodou `schema.sql` numa
+> versão anterior (só com `username`/`password_hash`), rode ele de novo —
+> os `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` são seguros e só adicionam
+> o que está faltando, sem apagar nada.
 
 ## Passo a passo — rodar/criar usuários localmente
 

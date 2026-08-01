@@ -295,13 +295,16 @@ function renderUsersList(users) {
   list.innerHTML = users.map((u) => {
     const isSelf = u.id === currentUserId;
     const created = new Date(u.created_at).toLocaleDateString("pt-BR");
+    const label = u.display_name ? `${u.display_name} <span class="text-gray-500">(${u.username})</span>` : u.username;
+    const roleText = u.role ? u.role : "Sem cargo definido";
     return `
     <div class="flex items-center justify-between gap-3 border border-border rounded-lg px-4 py-3 bg-card">
-      <div>
-        <p class="text-sm font-semibold text-white">${u.username}${isSelf ? ' <span class="text-xs text-accentlight">(você)</span>' : ""}</p>
-        <p class="text-xs text-gray-500">Criado em ${created}</p>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-white truncate">${label}${isSelf ? ' <span class="text-xs text-accentlight">(você)</span>' : ""}</p>
+        <p class="text-xs text-gray-500 truncate">${roleText} · Criado em ${created}</p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
+        <button class="icon-btn" title="Editar cargo" onclick="editUserRole(${u.id}, '${u.username}', ${u.role ? `'${u.role.replace(/'/g, "\\'")}'` : "null"})"><i data-lucide="briefcase" class="w-3.5 h-3.5"></i></button>
         <button class="icon-btn" title="Trocar senha" onclick="resetUserPassword(${u.id}, '${u.username}')"><i data-lucide="key-round" class="w-3.5 h-3.5"></i></button>
         <button class="icon-btn" title="Excluir" ${isSelf ? "disabled" : ""} onclick="deleteUser(${u.id}, '${u.username}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
       </div>
@@ -317,12 +320,14 @@ async function createUser(e) {
   const usernameInput = document.getElementById("newUsername");
   const passwordInput = document.getElementById("newPassword");
   const confirmInput = document.getElementById("newPasswordConfirm");
+  const roleInput = document.getElementById("newRole");
   const errorEl = document.getElementById("createUserError");
   errorEl.classList.add("hidden");
 
   const username = usernameInput.value.trim();
   const password = passwordInput.value;
   const confirm = confirmInput.value;
+  const role = roleInput.value.trim();
 
   if (password !== confirm) {
     errorEl.textContent = "As senhas não coincidem.";
@@ -339,7 +344,7 @@ async function createUser(e) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, role }),
     });
     const data = await res.json().catch(() => ({}));
 
@@ -352,6 +357,7 @@ async function createUser(e) {
     usernameInput.value = "";
     passwordInput.value = "";
     confirmInput.value = "";
+    roleInput.value = "";
     toast(`Usuário "${data.user.username}" criado.`, "success");
     loadUsers();
   } catch {
@@ -403,6 +409,29 @@ async function resetUserPassword(id, username) {
     toast(`Senha de "${username}" atualizada.`, "success");
   } catch {
     toast("Erro ao trocar senha.", "error");
+  }
+}
+
+async function editUserRole(id, username, currentRole) {
+  const newRole = prompt(`Cargo de "${username}" (deixe vazio para remover):`, currentRole || "");
+  if (newRole === null) return; // cancelou
+
+  try {
+    const res = await fetch("/api/users", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id, role: newRole.trim() }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast(data.error || "Erro ao atualizar cargo.", "error");
+      return;
+    }
+    toast(`Cargo de "${username}" atualizado.`, "success");
+    loadUsers();
+  } catch {
+    toast("Erro ao atualizar cargo.", "error");
   }
 }
 
