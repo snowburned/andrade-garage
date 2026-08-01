@@ -16,5 +16,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data   TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role          TEXT;
 
+-- Baú: cada usuário tem o próprio estoque, guardado como JSON.
+-- NULL = usuário nunca salvou nada ainda (o site usa o catálogo padrão
+-- de data.js na primeira vez e salva aqui a partir daí).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bau_data JSONB;
+
 -- Não existe nenhum jeito de criar usuário por aqui além deste SQL ou do
 -- script scripts/create-user.js. Não há tela nem rota pública de cadastro.

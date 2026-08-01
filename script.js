@@ -431,6 +431,7 @@ function saveItemForm(e) {
   }
   closeModal("itemModal");
   renderBauPage();
+  saveBauToServer();
   if (state.currentPage === "dashboard") renderDashboard();
   if (state.currentPage === "forjados") renderForjadosPage();
   if (state.currentPage === "moldescnc") renderMoldesPage();
@@ -442,6 +443,340 @@ function deleteItem(id) {
   bauItems = bauItems.filter((i) => i.id !== id);
   showToast("Item removido do Baú", "trash-2");
   renderBauPage();
+  saveBauToServer();
+}
+
+/* ================================================== importar baú (IA) === */
+// Fluxo: escolher/soltar imagem → enviar pra /api/import-bau-image (Gemini
+// Vision no backend) → o usuário revisa cada item detectado (pode editar
+// nome/quantidade, desmarcar, ver o nível de confiança) → só ao confirmar
+// é que os itens entram de fato no bauItems e são salvos no servidor.
+
+function escapeAttr(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+function normalizeItemName(str) {
+  return (str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function findExistingBauItemByName(name) {
+  const norm = normalizeItemName(name);
+  if (!norm) return null;
+  return bauItems.find((i) => normalizeItemName(i.nome) === norm) || null;
+}
+
+// Redimensiona o print pra um tamanho razoável antes de mandar pra IA
+// (mais rápido de enviar, mais barato pra API, sem perder legibilidade).
+function readAndResizeInventoryImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+      img.onload = () => {
+        const MAX = 1600;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const scale = MAX / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+let importBauState = { phase: "idle", items: [], error: null };
+
+function openImportBauModal() {
+  importBauState = { phase: "idle", items: [], error: null };
+  renderImportBauModal();
+  openModal("importBauModal");
+}
+
+function renderImportBauModal() {
+  const body = document.getElementById("importBauBody");
+  if (!body) return;
+
+  if (importBauState.phase === "idle") {
+    body.innerHTML = `
+      <div class="py-4">
+        <div id="importDropzone" class="w-full border-2 border-dashed border-border rounded-xl py-10 px-6 text-center cursor-pointer hover:border-accent transition-colors duration-200">
+          <i data-lucide="image-plus" class="w-8 h-8 mx-auto mb-3 text-gray-500"></i>
+          <p class="text-sm text-gray-300 font-medium">Clique para escolher um print, ou arraste aqui</p>
+          <p class="text-xs text-gray-500 mt-1">PNG, JPG ou WEBP · a imagem é redimensionada automaticamente</p>
+        </div>
+        <input id="importFileInput" type="file" accept="image/*" class="hidden" />
+      </div>`;
+    wireImportDropzone();
+  } else if (importBauState.phase === "loading") {
+    body.innerHTML = `
+      <div class="flex flex-col items-center justify-center gap-4 py-14">
+        <div class="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-sm text-gray-400">Analisando a imagem com IA...</p>
+      </div>`;
+  } else if (importBauState.phase === "error") {
+    body.innerHTML = `
+      <div class="text-center py-10">
+        <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-3 text-red-400"></i>
+        <p class="text-sm text-gray-300 mb-5 max-w-sm mx-auto">${escapeAttr(importBauState.error)}</p>
+        <button id="importRetryBtn" type="button" class="btn-secondary mx-auto">Tentar de novo</button>
+      </div>`;
+    document.getElementById("importRetryBtn").addEventListener("click", () => {
+      importBauState = { phase: "idle", items: [], error: null };
+      renderImportBauModal();
+    });
+  } else if (importBauState.phase === "review") {
+    body.innerHTML = renderImportReviewHtml();
+    wireImportReviewControls();
+  }
+  refreshIcons();
+}
+
+function wireImportDropzone() {
+  const zone = document.getElementById("importDropzone");
+  const input = document.getElementById("importFileInput");
+  if (!zone || !input) return;
+
+  zone.addEventListener("click", () => input.click());
+  zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("border-accent"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("border-accent"));
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("border-accent");
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) handleImportFile(file);
+  });
+  input.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (file) handleImportFile(file);
+  });
+}
+
+async function handleImportFile(file) {
+  if (!file.type.startsWith("image/")) {
+    showToast("Escolha um arquivo de imagem válido.", "alert-circle");
+    return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    showToast("Imagem muito grande. Escolha um arquivo de até 15MB.", "alert-circle");
+    return;
+  }
+
+  importBauState = { phase: "loading", items: [], error: null };
+  renderImportBauModal();
+
+  try {
+    const dataUrl = await readAndResizeInventoryImage(file);
+    const res = await fetch("/api/import-bau-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ image: dataUrl }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) throw new Error(data.error || "Não foi possível analisar a imagem.");
+
+    const detected = Array.isArray(data.items) ? data.items : [];
+    if (!detected.length) {
+      importBauState = {
+        phase: "error", items: [],
+        error: data.warning || "Nenhum item foi identificado nessa imagem. Tente um print mais nítido do baú.",
+      };
+      renderImportBauModal();
+      return;
+    }
+
+    importBauState = {
+      phase: "review",
+      error: null,
+      items: detected.map((it) => {
+        const matched = findExistingBauItemByName(it.name);
+        return {
+          name: it.name,
+          quantity: it.quantity,
+          confidence: it.confidence,
+          position: it.position,
+          selected: true,
+          matchedId: matched ? matched.id : null,
+          currentQty: matched ? matched.quantidade : null,
+        };
+      }),
+    };
+    renderImportBauModal();
+  } catch (err) {
+    importBauState = { phase: "error", items: [], error: err.message || "Erro ao analisar a imagem." };
+    renderImportBauModal();
+  }
+}
+
+function importRowStatusText(row) {
+  if (row.matchedId) {
+    const base = `Já existe no Baú (${row.currentQty ?? "?"}) — quantidade será <strong class="text-white">substituída</strong> por ${row.quantity}`;
+    return base + (row.position ? ` · ${escapeAttr(row.position)}` : "");
+  }
+  const base = "Não encontrado no Baú — será adicionado como item novo";
+  return base + (row.position ? ` · ${escapeAttr(row.position)}` : "");
+}
+
+function renderImportReviewHtml() {
+  const rows = importBauState.items.map((row, i) => {
+    const pct = Math.round((row.confidence ?? 0) * 100);
+    const low = (row.confidence ?? 0) < 0.6;
+    const mid = !low && pct < 85;
+    const badgeClass = low
+      ? "text-red-400 bg-red-500/10 border-red-500/30"
+      : mid
+      ? "text-amber-400 bg-amber-500/10 border-amber-500/30"
+      : "text-emerald-400 bg-emerald-500/10 border-emerald-500/30";
+
+    return `
+    <div class="flex items-start gap-3 border rounded-lg px-3 py-2.5 transition-colors duration-150 ${low ? "border-red-500/40 bg-red-500/5" : "border-border bg-base/40"}">
+      <input type="checkbox" class="import-row-check mt-2.5 accent-accent shrink-0" data-index="${i}" ${row.selected ? "checked" : ""} />
+      <div class="flex-1 min-w-0 space-y-1.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" class="import-row-name input-field !py-1.5 !text-sm flex-1 min-w-[130px]" data-index="${i}" value="${escapeAttr(row.name)}" />
+          <input type="number" min="0" class="import-row-qty input-field !py-1.5 !text-sm !w-20" data-index="${i}" value="${row.quantity}" />
+          <span class="text-[11px] px-2 py-0.5 rounded-full border ${badgeClass} shrink-0">${pct}% confiança</span>
+          ${low ? '<span class="text-[11px] px-2 py-0.5 rounded-full border border-red-500/40 text-red-400 bg-red-500/10 shrink-0">Revisar</span>' : ""}
+          <span class="import-row-badge text-[11px] px-2 py-0.5 rounded-full border shrink-0 ${row.matchedId ? "text-gray-400 border-border bg-white/5" : "text-accentlight border-accent/40 bg-accent/10"}">${row.matchedId ? "Já existe" : "Novo item"}</span>
+        </div>
+        <p class="import-row-status text-[11px] text-gray-500">${importRowStatusText(row)}</p>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `
+    <div class="space-y-3">
+      <p class="text-[11px] text-gray-500 bg-white/5 border border-border rounded-lg px-3 py-2">
+        <i data-lucide="info" class="w-3 h-3 inline -mt-0.5 mr-1"></i>
+        A imagem é tratada como o estado atual do baú no jogo: para itens já existentes, a quantidade do site será <strong class="text-gray-300">substituída</strong> pela quantidade lida — não somada.
+      </p>
+      <div class="flex items-center justify-between text-xs text-gray-500">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" id="importSelectAll" checked class="accent-accent" /> Selecionar todos (${importBauState.items.length})
+        </label>
+        <button id="importAnalyzeAgainBtn" type="button" class="text-accentlight hover:text-white transition-colors duration-150">Analisar outra imagem</button>
+      </div>
+      <div class="space-y-2 max-h-[42vh] overflow-y-auto pr-1">${rows}</div>
+      <div class="flex gap-3 pt-3 border-t border-border">
+        <button type="button" data-close-modal="importBauModal" class="btn-secondary flex-1">Cancelar</button>
+        <button id="importConfirmBtn" type="button" class="btn-primary flex-1 justify-center">Importar selecionados</button>
+      </div>
+    </div>`;
+}
+
+function wireImportReviewControls() {
+  document.querySelectorAll(".import-row-check").forEach((el) => {
+    el.addEventListener("change", (e) => {
+      importBauState.items[+e.target.dataset.index].selected = e.target.checked;
+    });
+  });
+
+  document.querySelectorAll(".import-row-name").forEach((el) => {
+    el.addEventListener("input", (e) => {
+      const i = +e.target.dataset.index;
+      const row = importBauState.items[i];
+      row.name = e.target.value;
+      const matched = findExistingBauItemByName(row.name);
+      row.matchedId = matched ? matched.id : null;
+      row.currentQty = matched ? matched.quantidade : null;
+
+      const wrap = el.closest(".flex-1");
+      const statusEl = wrap?.querySelector(".import-row-status");
+      if (statusEl) statusEl.innerHTML = importRowStatusText(row);
+      const badgeEl = wrap?.querySelector(".import-row-badge");
+      if (badgeEl) {
+        badgeEl.textContent = row.matchedId ? "Já existe" : "Novo item";
+        badgeEl.className = `import-row-badge text-[11px] px-2 py-0.5 rounded-full border shrink-0 ${row.matchedId ? "text-gray-400 border-border bg-white/5" : "text-accentlight border-accent/40 bg-accent/10"}`;
+      }
+    });
+  });
+
+  document.querySelectorAll(".import-row-qty").forEach((el) => {
+    el.addEventListener("input", (e) => {
+      const i = +e.target.dataset.index;
+      const row = importBauState.items[i];
+      row.quantity = Math.max(0, parseInt(e.target.value, 10) || 0);
+      const statusEl = el.closest(".flex-1")?.querySelector(".import-row-status");
+      if (statusEl) statusEl.innerHTML = importRowStatusText(row);
+    });
+  });
+
+  const selectAll = document.getElementById("importSelectAll");
+  selectAll?.addEventListener("change", (e) => {
+    importBauState.items.forEach((row) => (row.selected = e.target.checked));
+    document.querySelectorAll(".import-row-check").forEach((el) => { el.checked = e.target.checked; });
+  });
+
+  document.getElementById("importAnalyzeAgainBtn")?.addEventListener("click", () => {
+    importBauState = { phase: "idle", items: [], error: null };
+    renderImportBauModal();
+  });
+
+  document.getElementById("importConfirmBtn")?.addEventListener("click", confirmImportBau);
+}
+
+function confirmImportBau() {
+  const selected = importBauState.items.filter((row) => row.selected && row.name.trim());
+  if (!selected.length) {
+    showToast("Selecione ao menos um item pra importar.", "alert-circle");
+    return;
+  }
+
+  let addedCount = 0;
+  let updatedCount = 0;
+
+  selected.forEach((row, idx) => {
+    const qty = Math.max(0, Math.round(row.quantity) || 0);
+    const existing = row.matchedId ? bauItems.find((i) => i.id === row.matchedId) : findExistingBauItemByName(row.name);
+
+    if (existing) {
+      // O print representa o estado atual do baú no jogo — a quantidade
+      // lida SUBSTITUI a quantidade salva, nunca soma em cima dela.
+      existing.quantidade = qty;
+      existing.ultimaAtualizacao = todayStr();
+      updatedCount++;
+      return;
+    }
+
+    bauItems.push({
+      id: `${slugify(row.name.trim())}-${Date.now().toString().slice(-4)}-${idx}`,
+      nome: row.name.trim(),
+      categoria: "Importado via IA",
+      quantidade: qty,
+      ultimaAtualizacao: todayStr(),
+    });
+    addedCount++;
+  });
+
+  closeModal("importBauModal");
+  renderBauPage();
+  saveBauToServer();
+  if (state.currentPage === "dashboard") renderDashboard();
+
+  const parts = [];
+  if (updatedCount) parts.push(`${updatedCount} atualizado${updatedCount > 1 ? "s" : ""}`);
+  if (addedCount) parts.push(`${addedCount} novo${addedCount > 1 ? "s" : ""}`);
+  showToast(`Baú importado: ${parts.join(", ")}.`);
 }
 
 /* ================================================================ peças === */
@@ -1040,6 +1375,7 @@ function forjarItem() {
   state.forgeQty = 1;
   showToast(`${data.nome} forjada${qtd > 1 ? ` (${qtd}x)` : ""} — materiais debitados do Baú`, "hammer");
   renderDetailModal();
+  saveBauToServer();
   if (state.currentPage === "dashboard") renderDashboard();
   if (state.currentPage === "bau") renderBauPage();
   if (state.currentPage === "forjados") renderForjadosPage();
@@ -1384,18 +1720,23 @@ function closeModal(id) {
 
 /* ================================================================ init === */
 
-// Carrega assets/image-map.json (mantido pelo painel /admin.html) e aplica
-// o campo "imagem" em cada item do Baú / Peças / Moldes CNC pelo id.
-// Se o arquivo não existir ou não puder ser lido (ex: abrindo via file://),
-// o site continua funcionando normalmente só sem essas imagens extras.
+// Mapa id → caminho da imagem, vindo de assets/image-map.json (mantido pelo
+// painel /admin.html). É compartilhado por todo mundo — só as QUANTIDADES e
+// os itens do Baú em si é que são por usuário (ver loadBauFromServer).
+let imageOverridesMap = {};
+
+// Carrega assets/image-map.json e aplica o campo "imagem" em PARTS e
+// MOLDES_CNC (catálogos fixos, iguais pra todo mundo). O Baú aplica essas
+// imagens separadamente, em applyImageOverrides(), porque o array dele
+// muda de usuário pra usuário.
 async function loadImageOverrides() {
   try {
     const res = await fetch("assets/image-map.json", { cache: "no-store" });
     if (!res.ok) return;
-    const map = await res.json();
-    [BAU_ITEMS, PARTS, MOLDES_CNC].forEach((list) => {
+    imageOverridesMap = await res.json();
+    [PARTS, MOLDES_CNC].forEach((list) => {
       list.forEach((item) => {
-        if (map[item.id]) item.imagem = map[item.id];
+        if (imageOverridesMap[item.id]) item.imagem = imageOverridesMap[item.id];
       });
     });
   } catch (err) {
@@ -1403,9 +1744,55 @@ async function loadImageOverrides() {
   }
 }
 
+function applyImageOverrides(list) {
+  list.forEach((item) => {
+    if (imageOverridesMap[item.id]) item.imagem = imageOverridesMap[item.id];
+  });
+}
+
+// Carrega o Baú DESSE usuário a partir do banco (Neon). Se ele nunca salvou
+// nada ainda (primeiro acesso), começa a partir do catálogo padrão de
+// data.js e já salva isso como o Baú inicial dele.
+async function loadBauFromServer() {
+  try {
+    const res = await fetch("/api/bau", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items) && data.items.length) {
+        bauItems = data.items;
+        applyImageOverrides(bauItems);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("Não foi possível carregar o Baú do servidor:", err.message);
+  }
+
+  bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
+  applyImageOverrides(bauItems);
+  saveBauToServer();
+}
+
+// Salva o Baú desse usuário no banco. Chamado depois de qualquer mudança
+// (adicionar/editar/remover item, forjar, ou restaurar os dados originais).
+async function saveBauToServer() {
+  try {
+    const res = await fetch("/api/bau", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ items: bauItems }),
+    });
+    if (!res.ok) throw new Error("resposta não-ok");
+  } catch (err) {
+    console.warn("Não foi possível salvar o Baú no servidor:", err.message);
+    showToast("Não foi possível salvar o Baú. Verifique sua conexão.", "alert-circle");
+  }
+}
+
 async function init() {
   await loadImageOverrides();
-  bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
+  await loadBauFromServer();
   refreshIcons();
   loadOrderHistory();
   navigateTo("dashboard");
@@ -1456,6 +1843,7 @@ async function init() {
   });
   document.getElementById("addItemBtn").addEventListener("click", () => openItemModal());
   document.getElementById("itemForm").addEventListener("submit", saveItemForm);
+  document.getElementById("importBauBtn").addEventListener("click", openImportBauModal);
 
   // Ordem de Serviço (seleção de itens da Loja)
   document.getElementById("orderBarClearBtn").addEventListener("click", clearOrder);
@@ -1561,6 +1949,8 @@ async function init() {
   document.getElementById("resetDataBtn").addEventListener("click", () => {
     if (!confirm("Restaurar todos os dados para os valores originais?")) return;
     bauItems = JSON.parse(JSON.stringify(BAU_ITEMS));
+    applyImageOverrides(bauItems);
+    saveBauToServer();
     showToast("Dados restaurados com sucesso", "rotate-ccw");
     navigateTo(state.currentPage);
   });
