@@ -21,6 +21,7 @@ const state = {
   order: {}, // seleção de itens da Loja para gerar uma Ordem de Serviço { [id]: {id,nome,categoria,valor,qtd} }
   orderHistory: [], // Ordens de Serviço já confirmadas: { numero, data, itens[], total }
   orderCounter: 0, // último número de OS emitido
+  forgeCart: {}, // seleção de peças (aba Peças) pra forjar em lote: { [partId]: qtd }
   forgeQty: 1, // quantidade selecionada para "Forjar com 1 clique" no modal de detalhes
   editingItemId: null,
   detailStack: [], // pilha de navegação do modal de detalhes { type: 'parte'|'molde', id }
@@ -823,11 +824,18 @@ function renderCategoryTile(cat) {
 function partRowCard(p) {
   const { canMake } = checkDirectStock(p.materiais);
   const hasForjada = p.materiais.some((m) => m.forjada);
+  const selected = !!state.forgeCart[p.id];
   const imageContent = p.imagem
     ? `<img src="${p.imagem}" alt="${p.nome}" class="part-row-photo" loading="lazy" onerror="this.style.display='none'" />`
     : `<i data-lucide="${CATEGORY_ICONS[p.categoria] || "wrench"}" class="w-7 h-7 opacity-90"></i>`;
   return `
-  <button type="button" class="part-row-card" onclick="openDetailModal('parte','${p.id}')">
+  <div class="part-row-card ${selected ? "is-selected" : ""}" role="button" tabindex="0"
+    onclick="openDetailModal('parte','${p.id}')"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetailModal('parte','${p.id}');}">
+    <label class="row-select" title="Selecionar para a Ordem de Serviço" onclick="event.stopPropagation()">
+      <input type="checkbox" data-forge-id="${p.id}" ${selected ? "checked" : ""}
+        onchange="toggleForgeCartItem('${p.id}', this.checked, this)" />
+    </label>
     <div class="part-row-image">
       ${imageContent}
       <span class="part-row-blur"></span>
@@ -846,7 +854,7 @@ function partRowCard(p) {
       </div>
     </div>
     <div class="part-row-chevron"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>
-  </button>`;
+  </div>`;
 }
 
 function renderCategoriesLevel(container) {
@@ -917,6 +925,250 @@ function renderForjadosPage() {
     renderCategoriesLevel(container);
   }
   refreshIcons();
+}
+
+/* ================================================== OS de forja (lote) === */
+// Selecionar várias peças na aba Peças, revisar uma lista ÚNICA e consolidada
+// de materiais (somando os insumos repetidos entre as peças escolhidas), e só
+// então debitar tudo do Baú de uma vez. Etapa de conferência obrigatória:
+// o modal (#forgeOsModal) só fecha pelo botão FECHAR ou ENVIAR AO BAÚ — não
+// por clique fora nem pela tecla ESC (ver wiring em initModals()).
+
+function toggleForgeCartItem(id, checked, el) {
+  if (checked) {
+    if (!state.forgeCart[id]) state.forgeCart[id] = 1;
+  } else {
+    delete state.forgeCart[id];
+  }
+  const card = el ? el.closest(".part-row-card") : null;
+  if (card) card.classList.toggle("is-selected", checked);
+  updateForgeOsIndicator();
+}
+
+function updateForgeCartQty(id, delta) {
+  const current = state.forgeCart[id];
+  if (current === undefined) return;
+  state.forgeCart[id] = Math.max(1, current + delta);
+  updateForgeOsIndicator();
+  renderForgeOsModalBody();
+}
+
+function removeForgeCartItem(id) {
+  delete state.forgeCart[id];
+  const cb = document.querySelector(`input[data-forge-id="${id}"]`);
+  if (cb) {
+    cb.checked = false;
+    const card = cb.closest(".part-row-card");
+    if (card) card.classList.remove("is-selected");
+  }
+  updateForgeOsIndicator();
+  renderForgeOsModalBody();
+}
+
+function clearForgeCart() {
+  state.forgeCart = {};
+  document.querySelectorAll("input[data-forge-id]").forEach((cb) => {
+    cb.checked = false;
+    const card = cb.closest(".part-row-card");
+    if (card) card.classList.remove("is-selected");
+  });
+  updateForgeOsIndicator();
+}
+
+function getForgeCartEntries() {
+  return Object.entries(state.forgeCart)
+    .map(([id, qtd]) => ({ part: PARTS.find((p) => p.id === id), qtd }))
+    .filter((e) => e.part && e.qtd > 0);
+}
+
+// Consolida os materiais de TODAS as peças selecionadas numa lista única,
+// somando os insumos repetidos (ex: 2x Motor V8 + 3x Caixa de Câmbio, ambos
+// usando Barra de Aço, viram uma única linha "Barra de Aço — total somado").
+function computeForgeConsolidatedMaterials() {
+  const map = new Map();
+  getForgeCartEntries().forEach(({ part, qtd }) => {
+    part.materiais.forEach((m) => {
+      if (m.forjada) return; // peças forjadas não são debitadas diretamente do Baú (igual ao forjarItem)
+      if (!map.has(m.nome)) {
+        const bau = findBauItemByName(m.nome);
+        map.set(m.nome, { nome: m.nome, total: 0, disponivel: bau ? bau.quantidade : null });
+      }
+      map.get(m.nome).total += m.quantidade * qtd;
+    });
+  });
+  return [...map.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+function getForgeOsTotals() {
+  const entries = getForgeCartEntries();
+  const totalPecas = entries.reduce((s, e) => s + e.qtd, 0);
+  const materiais = computeForgeConsolidatedMaterials();
+  const totalMateriais = materiais.reduce((s, m) => s + m.total, 0);
+  return { entries, totalPecas, materiais, totalMateriais };
+}
+
+function updateForgeOsIndicator() {
+  const btn = document.getElementById("forgeOsBtn");
+  const badge = document.getElementById("forgeOsBadge");
+  if (!btn || !badge) return;
+  const count = Object.keys(state.forgeCart).length;
+  badge.textContent = String(count);
+  badge.classList.toggle("hidden", count === 0);
+  btn.classList.toggle("opacity-50", count === 0);
+}
+
+function forgeOsPartRow(entry) {
+  const imageContent = entry.part.imagem
+    ? `<img src="${entry.part.imagem}" alt="" class="w-full h-full object-cover" />`
+    : `<i data-lucide="${CATEGORY_ICONS[entry.part.categoria] || "wrench"}" class="w-4 h-4 text-gray-500"></i>`;
+  return `
+  <div class="material-row justify-between !py-2">
+    <div class="min-w-0 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-base border border-border overflow-hidden shrink-0 flex items-center justify-center">
+        ${imageContent}
+      </div>
+      <p class="text-sm text-gray-200 truncate">${entry.part.nome}</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <div class="qty-stepper">
+        <button type="button" title="Diminuir" onclick="updateForgeCartQty('${entry.part.id}', -1)">−</button>
+        <span>${entry.qtd}</span>
+        <button type="button" title="Aumentar" onclick="updateForgeCartQty('${entry.part.id}', 1)">+</button>
+      </div>
+      <button type="button" class="icon-btn danger" title="Remover da OS" onclick="removeForgeCartItem('${entry.part.id}')">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </div>`;
+}
+
+function forgeOsMaterialRow(m) {
+  const insuficiente = m.disponivel !== null && m.disponivel < m.total;
+  return `
+  <div class="material-row justify-between">
+    <div class="min-w-0">
+      <p class="text-sm font-semibold text-white truncate">${m.nome}</p>
+      ${
+        m.disponivel !== null
+          ? `<p class="text-[11px] ${insuficiente ? "text-red-400" : "text-emerald-400"} mt-0.5">${m.disponivel} em estoque${insuficiente ? ` · faltam ${m.total - m.disponivel}` : ""}</p>`
+          : `<p class="text-[11px] text-gray-600 mt-0.5">Não controlado no Baú</p>`
+      }
+    </div>
+    <span class="text-lg font-bold ${insuficiente ? "text-red-400" : "text-white"} shrink-0">${m.total}</span>
+  </div>`;
+}
+
+function renderForgeOsModalBody() {
+  const body = document.getElementById("forgeOsModalBody");
+  if (!body) return;
+
+  const { entries, totalPecas, materiais, totalMateriais } = getForgeOsTotals();
+
+  if (!entries.length) {
+    body.innerHTML = `
+      <div class="text-center py-14">
+        <i data-lucide="clipboard-list" class="w-9 h-9 mx-auto mb-3 text-gray-600"></i>
+        <p class="text-sm text-gray-500">Nenhuma peça selecionada ainda.</p>
+        <p class="text-xs text-gray-600 mt-1">Feche esta OS e marque as peças que quer forjar na aba Peças.</p>
+      </div>
+      <div class="flex gap-3 pt-4 border-t border-border">
+        <button type="button" onclick="closeModal('forgeOsModal')" class="btn-secondary flex-1">FECHAR</button>
+        <button type="button" class="btn-primary flex-1 justify-center opacity-50 cursor-not-allowed" disabled>ENVIAR AO BAÚ</button>
+      </div>`;
+    refreshIcons();
+    return;
+  }
+
+  const temInsuficiente = materiais.some((m) => m.disponivel !== null && m.disponivel < m.total);
+
+  body.innerHTML = `
+    <div class="space-y-5">
+      <div>
+        <h4 class="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">
+          Peças selecionadas · ${entries.length} ${entries.length === 1 ? "peça" : "peças"} (${totalPecas} un.)
+        </h4>
+        <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+          ${entries.map(forgeOsPartRow).join("")}
+        </div>
+      </div>
+
+      <div class="border-t border-border pt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="package" class="w-4 h-4 text-accentlight"></i>
+            Materiais necessários
+          </h4>
+          <span class="text-xs text-gray-500">
+            ${materiais.length} ${materiais.length === 1 ? "item" : "itens"} ·
+            <span class="text-white font-semibold">${totalMateriais}</span> un. no total
+          </span>
+        </div>
+        <div class="space-y-2 max-h-[38vh] overflow-y-auto pr-1">
+          ${materiais.length ? materiais.map(forgeOsMaterialRow).join("") : `<p class="text-sm text-gray-500 text-center py-6">Essas peças não consomem materiais controlados no Baú.</p>`}
+        </div>
+        ${temInsuficiente ? `
+        <p class="text-xs text-red-400 flex items-center gap-1.5 mt-3">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5 shrink-0"></i>
+          Baú sem estoque suficiente pra concluir esta OS — os itens em vermelho precisam ser repostos antes de enviar.
+        </p>` : ""}
+      </div>
+
+      <div class="flex gap-3 pt-1 border-t border-border">
+        <button type="button" onclick="closeModal('forgeOsModal')" class="btn-secondary flex-1">FECHAR</button>
+        <button type="button" onclick="confirmForgeOs()" class="btn-primary flex-1 justify-center ${temInsuficiente ? "opacity-50 cursor-not-allowed" : ""}" ${temInsuficiente ? "disabled" : ""}>ENVIAR AO BAÚ</button>
+      </div>
+    </div>`;
+  refreshIcons();
+}
+
+function openForgeOsModal() {
+  if (!Object.keys(state.forgeCart).length) {
+    showToast("Selecione ao menos uma peça na aba Peças pra montar a OS", "alert-triangle");
+    return;
+  }
+  renderForgeOsModalBody();
+  openModal("forgeOsModal");
+}
+
+// Envia a OS de verdade: debita todos os materiais consolidados do Baú de
+// uma vez (tudo ou nada — se faltar algo, nada é debitado), limpa a
+// seleção e fecha o modal.
+function confirmForgeOs() {
+  const { entries, materiais } = getForgeOsTotals();
+  if (!entries.length) {
+    showToast("Nenhuma peça selecionada.", "alert-circle");
+    return;
+  }
+
+  const insuficientes = materiais.filter((m) => m.disponivel !== null && m.disponivel < m.total);
+  if (insuficientes.length) {
+    showToast(`Baú sem estoque suficiente: ${insuficientes.map((m) => m.nome).join(", ")}`, "x-circle");
+    return;
+  }
+
+  entries.forEach(({ part, qtd }) => {
+    part.materiais.forEach((m) => {
+      if (m.forjada) return;
+      const bau = findBauItemByName(m.nome);
+      if (bau) {
+        bau.quantidade = Math.max(0, bau.quantidade - m.quantidade * qtd);
+        bau.ultimaAtualizacao = todayStr();
+      }
+    });
+  });
+
+  const totalPecas = entries.reduce((s, e) => s + e.qtd, 0);
+  const resumo = entries.length === 1 ? entries[0].part.nome : `${entries.length} peças diferentes`;
+
+  clearForgeCart();
+  closeModal("forgeOsModal");
+  saveBauToServer();
+  if (state.currentPage === "dashboard") renderDashboard();
+  if (state.currentPage === "bau") renderBauPage();
+  if (state.currentPage === "forjados") renderForjadosPage();
+  if (state.currentPage === "moldescnc") renderMoldesPage();
+
+  showToast(`OS enviada ao Baú: ${resumo} (${totalPecas} un.) forjadas`, "hammer");
 }
 
 /* ============================================================ moldes cnc === */
@@ -1844,6 +2096,8 @@ async function init() {
   document.getElementById("addItemBtn").addEventListener("click", () => openItemModal());
   document.getElementById("itemForm").addEventListener("submit", saveItemForm);
   document.getElementById("importBauBtn").addEventListener("click", openImportBauModal);
+  document.getElementById("forgeOsBtn").addEventListener("click", openForgeOsModal);
+  updateForgeOsIndicator();
 
   // Ordem de Serviço (seleção de itens da Loja)
   document.getElementById("orderBarClearBtn").addEventListener("click", clearOrder);
@@ -1890,12 +2144,14 @@ async function init() {
   });
   document.querySelectorAll(".modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeModal(overlay.id);
+      if (e.target === overlay && overlay.dataset.locked !== "true") closeModal(overlay.id);
     });
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => closeModal(m.id));
+      document.querySelectorAll(".modal-overlay:not(.hidden)").forEach((m) => {
+        if (m.dataset.locked !== "true") closeModal(m.id);
+      });
     }
   });
 

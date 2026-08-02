@@ -132,17 +132,28 @@ depender de servidor próprio com GPU (o que a Vercel não oferece):
 
 | Opção | Gratuito de verdade? | Cartão de crédito? | Qualidade em leitura de ícones/texto de UI |
 |---|---|---|---|
-| **Gemini 2.0 Flash (Google AI Studio)** | Sim — 1.500 requisições/dia | Não | Boa — é treinado pra OCR + reconhecimento visual, e devolve JSON estruturado nativamente |
+| **Gemini 3.6 Flash (Google AI Studio)** | Sim — sujeito a limites de requisições/dia do plano gratuito | Não | Boa — é treinado pra OCR + reconhecimento visual, e devolve JSON estruturado nativamente |
 | OpenAI GPT-4o / GPT-4.1 Vision | Não — cobra por uso desde o primeiro request | Sim | Ótima, mas fora do requisito de custo zero |
 | Groq (Llama Vision) | Parcial — free tier bem mais apertado (~1.000 req/dia por modelo, TPM baixo) | Não | Razoável, mas menos confiável em texto pequeno |
 | Modelo local (LLaVA/Moondream via Ollama) | Sim, mas precisa de servidor próprio com GPU/CPU decente rodando 24/7 | Não seria de API, mas tem custo de hospedagem | Fica bem abaixo dos modelos acima em texto pequeno/ícones — pouco viável rodando "de graça" numa função serverless da Vercel, que não tem GPU e teria timeout |
 
-**Gemini 2.0 Flash** venceu porque: (1) é genuinamente gratuito, sem cartão
+**Gemini 3.6 Flash** venceu porque: (1) é genuinamente gratuito, sem cartão
 e sem cobrança surpresa; (2) suporta `responseSchema` — ou seja, dá pra
 **forçar** a IA a devolver exatamente o JSON que o sistema espera, em vez de
 tentar interpretar texto solto; (3) roda bem dentro de uma função serverless
 comum (sem precisar de servidor com GPU); (4) tem qualidade de OCR/visão
 muito acima do que dá pra rodar de graça localmente.
+
+> **Os nomes dos modelos gratuitos do Google mudam com frequência** (o
+> antigo `gemini-2.0-flash`, por exemplo, foi desligado em junho de 2026).
+> Por isso o modelo usado aqui **não está fixo no código**: ele vem da
+> variável de ambiente `GEMINI_MODEL` (padrão `gemini-3.6-flash`). Se sua
+> conta do Google AI Studio não tiver acesso a esse modelo específico —
+> contas novas às vezes começam com um conjunto menor de modelos liberados
+> — abra [aistudio.google.com](https://aistudio.google.com), veja a lista
+> de modelos disponíveis pra sua conta (ex: `gemini-3.5-flash-lite`,
+> `gemini-2.5-flash`, `gemini-2.5-flash-lite`) e coloque o nome exato de um
+> deles em `GEMINI_MODEL` — sem precisar mexer em nenhum outro arquivo.
 
 ### Como a leitura funciona
 
@@ -165,11 +176,13 @@ o print representa o estado atual do baú no jogo naquele momento.
 
 ### Limitações e como o sistema já minimiza cada uma
 
-- **Limite de 1.500 requisições grátis por dia** (por projeto do Google
-  Cloud) — dá bastante folga pro uso de uma oficina, mas se você tiver
-  muitos usuários importando ao mesmo tempo, pode bater o limite. O
-  endpoint já devolve um erro claro (`429`, "IA sobrecarregada") em vez de
-  travar, e o usuário pode tentar de novo depois.
+- **Limite diário de requisições grátis** (por projeto do Google Cloud,
+  varia por modelo e muda com o tempo — confira o número atual em
+  [ai.google.dev/pricing](https://ai.google.dev/pricing)) — geralmente dá
+  bastante folga pro uso de uma oficina, mas se você tiver muitos usuários
+  importando ao mesmo tempo, pode bater o limite. O endpoint já devolve um
+  erro claro (`429`, "IA sobrecarregada") em vez de travar, e o usuário
+  pode tentar de novo depois.
 - **Erros de leitura em ícones pequenos, cortados ou muito parecidos entre
   si** — por isso a IA retorna um `confidence` (0 a 1) pra cada item, e a
   tela de revisão **destaca em vermelho** e marca como **"Revisar"**
@@ -214,6 +227,29 @@ trás. É só manter o mesmo formato de retorno.
 3. Pronto. Se você não configurar essa chave, o resto do site continua
    funcionando normalmente — só o botão "Importar por imagem" mostra um
    aviso pedindo pra configurar.
+
+## Ordem de Serviço (OS) de forja em lote
+
+Na aba **Peças**, cada card tem uma caixinha de seleção (igual à da Peças
+LOJA). Marque uma ou mais peças e clique no botão **OS** que aparece no
+cabeçalho, ao lado de "Sistema online" — ele mostra um contador de quantas
+peças estão selecionadas.
+
+A OS consolida automaticamente todos os materiais das peças escolhidas numa
+**lista única**, somando os insumos repetidos entre peças diferentes (ex:
+2x Motor V8 + 3x Caixa de Câmbio, se ambos usam Barra de Aço, aparecem como
+uma linha só com o total somado) — facilita separar tudo de uma vez antes
+de debitar do Baú.
+
+Essa tela é uma etapa de confirmação obrigatória: **não fecha clicando fora
+nem com ESC**, só pelos botões "FECHAR" (cancela, mantém a seleção) ou
+"ENVIAR AO BAÚ" (debita os materiais de uma vez só — tudo ou nada; se
+faltar estoque de algum material, nada é debitado e o item fica destacado
+em vermelho na lista). Isso é intencional: evita que um clique errado feche
+a conferência antes da hora.
+
+Esse carrinho de seleção não é salvo em lugar nenhum — ele existe só
+durante a sessão do navegador, igual a um carrinho de compras comum.
 
 ## Rodar tudo localmente com backend (opcional)
 

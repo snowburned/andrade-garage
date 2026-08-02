@@ -158,6 +158,11 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             Sistema online
           </span>
+          <button id="forgeOsBtn" title="Ordem de Serviço" class="relative flex items-center gap-1.5 h-9 px-3 rounded-lg bg-card border border-border text-gray-300 hover:text-white hover:border-accent transition-colors duration-200 opacity-50">
+            <i data-lucide="clipboard-list" class="w-[16px] h-[16px]"></i>
+            <span class="text-xs font-semibold hidden sm:inline">OS</span>
+            <span id="forgeOsBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+          </button>
           <button id="logoutBtn" title="Sair" class="w-9 h-9 flex items-center justify-center rounded-lg bg-card border border-border text-gray-300 hover:text-white hover:border-accent transition-colors">
             <i data-lucide="log-out" class="w-[16px] h-[16px]"></i>
           </button>
@@ -538,6 +543,25 @@
         <button data-close-modal="importBauModal" class="modal-close"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div id="importBauBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ============================= MODAL: ORDEM DE SERVIÇO (FORJA EM LOTE) ============================= -->
+  <!-- data-locked="true": etapa de validação obrigatória — só fecha pelo botão FECHAR ou ENVIAR AO BAÚ. -->
+  <div id="forgeOsModal" class="modal-overlay hidden" data-locked="true">
+    <div class="modal-box max-w-xl">
+      <div class="modal-header">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center text-accentlight shrink-0">
+            <i data-lucide="clipboard-list" class="w-[18px] h-[18px]"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-lg font-bold text-white leading-tight">Ordem de Serviço</h3>
+            <p class="text-xs text-gray-500">Confira os materiais antes de enviar ao Baú</p>
+          </div>
+        </div>
+      </div>
+      <div id="forgeOsModalBody" class="modal-body"></div>
     </div>
   </div>
 
