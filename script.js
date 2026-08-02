@@ -981,22 +981,42 @@ function getForgeCartEntries() {
     .filter((e) => e.part && e.qtd > 0);
 }
 
+// Expande recursivamente uma lista de materiais: se um material for uma
+// "peça forjada" (uma sub-receita, ex: Bloco de Ferro Bruto dentro de Bloco
+// de Ferro Fundido), em vez de ignorá-lo, entra na receita dela e soma os
+// materiais REAIS que ela precisa — multiplicando pela quantidade em cada
+// nível da cadeia. Assim a OS mostra o total de verdade que sai do Baú,
+// mesmo quando uma peça depende de outra peça/molde pra ser feita.
+function resolveRawMaterials(materiaisList, multiplier, acc, visited) {
+  materiaisList.forEach((m) => {
+    if (m.forjada && m.ref) {
+      const refKey = `${m.ref.type}:${m.ref.id}`;
+      if (visited.has(refKey)) return; // proteção contra receita circular
+      const subData = getDetailData(m.ref);
+      if (!subData || !Array.isArray(subData.materiais)) return;
+      const nextVisited = new Set(visited);
+      nextVisited.add(refKey);
+      resolveRawMaterials(subData.materiais, multiplier * m.quantidade, acc, nextVisited);
+      return;
+    }
+    if (!acc.has(m.nome)) {
+      const bau = findBauItemByName(m.nome);
+      acc.set(m.nome, { nome: m.nome, total: 0, disponivel: bau ? bau.quantidade : null });
+    }
+    acc.get(m.nome).total += m.quantidade * multiplier;
+  });
+}
+
 // Consolida os materiais de TODAS as peças selecionadas numa lista única,
 // somando os insumos repetidos (ex: 2x Motor V8 + 3x Caixa de Câmbio, ambos
-// usando Barra de Aço, viram uma única linha "Barra de Aço — total somado").
+// usando Barra de Aço, viram uma única linha "Barra de Aço — total somado"),
+// já expandindo qualquer peça forjada aninhada até os materiais reais.
 function computeForgeConsolidatedMaterials() {
-  const map = new Map();
+  const acc = new Map();
   getForgeCartEntries().forEach(({ part, qtd }) => {
-    part.materiais.forEach((m) => {
-      if (m.forjada) return; // peças forjadas não são debitadas diretamente do Baú (igual ao forjarItem)
-      if (!map.has(m.nome)) {
-        const bau = findBauItemByName(m.nome);
-        map.set(m.nome, { nome: m.nome, total: 0, disponivel: bau ? bau.quantidade : null });
-      }
-      map.get(m.nome).total += m.quantidade * qtd;
-    });
+    resolveRawMaterials(part.materiais, qtd, acc, new Set());
   });
-  return [...map.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  return [...acc.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
 function getForgeOsTotals() {
@@ -1146,15 +1166,12 @@ function confirmForgeOs() {
     return;
   }
 
-  entries.forEach(({ part, qtd }) => {
-    part.materiais.forEach((m) => {
-      if (m.forjada) return;
-      const bau = findBauItemByName(m.nome);
-      if (bau) {
-        bau.quantidade = Math.max(0, bau.quantidade - m.quantidade * qtd);
-        bau.ultimaAtualizacao = todayStr();
-      }
-    });
+  materiais.forEach((m) => {
+    const bau = findBauItemByName(m.nome);
+    if (bau) {
+      bau.quantidade = Math.max(0, bau.quantidade - m.total);
+      bau.ultimaAtualizacao = todayStr();
+    }
   });
 
   const totalPecas = entries.reduce((s, e) => s + e.qtd, 0);
