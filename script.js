@@ -2052,10 +2052,13 @@ async function saveBauToServer() {
       credentials: "include",
       body: JSON.stringify({ items: bauItems }),
     });
-    if (!res.ok) throw new Error("resposta não-ok");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `O servidor respondeu ${res.status}`);
+    }
   } catch (err) {
-    console.warn("Não foi possível salvar o Baú no servidor:", err.message);
-    showToast("Não foi possível salvar o Baú. Verifique sua conexão.", "alert-circle");
+    console.warn("Não foi possível salvar o Baú no servidor:", err);
+    showToast(`Não foi possível salvar o Baú: ${err.message}`, "alert-circle");
   }
 }
 
